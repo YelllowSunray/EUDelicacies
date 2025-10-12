@@ -15,19 +15,41 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [checkingRedirect, setCheckingRedirect] = useState(false);
   const { signInWithGoogle, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     setIsMobile(isMobileDevice());
+    
+    // Check if coming back from Google redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    const pendingRole = localStorage.getItem('pendingGoogleRole');
+    
+    if (pendingRole || mode === 'select_account') {
+      console.log('🔄 Detected redirect from Google, waiting for auth...');
+      setCheckingRedirect(true);
+      setLoading(true);
+      
+      // Set a timeout in case auth doesn't complete
+      setTimeout(() => {
+        setCheckingRedirect(false);
+        setLoading(false);
+      }, 5000);
+    }
   }, []);
 
   useEffect(() => {
     // Redirect if already logged in
     if (user) {
+      console.log('✅ User logged in, redirecting...');
       router.push("/");
+    } else if (checkingRedirect && !loading) {
+      // If we were checking for redirect but no user appeared, stop loading
+      setCheckingRedirect(false);
     }
-  }, [user, router]);
+  }, [user, router, checkingRedirect, loading]);
 
   const handleGoogleSignIn = async () => {
     setError("");
@@ -92,7 +114,19 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-8">
-          {error && (
+          {checkingRedirect && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6">
+              <div className="flex items-center gap-3">
+                <div className="animate-spin text-2xl">⏳</div>
+                <div>
+                  <p className="font-semibold">Completing sign-in...</p>
+                  <p className="text-sm">Please wait while we log you in</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {error && !checkingRedirect && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
               {error}
             </div>
@@ -100,7 +134,7 @@ export default function LoginPage() {
 
           <button
             onClick={handleGoogleSignIn}
-            disabled={loading}
+            disabled={loading || checkingRedirect}
             className="w-full py-4 bg-white border-2 border-olive/30 text-navy rounded-full hover:bg-cream transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-sm"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24">

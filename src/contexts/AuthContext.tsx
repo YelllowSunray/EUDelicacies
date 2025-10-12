@@ -58,7 +58,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔄 AuthContext: Setting up auth');
+    
+    // Check for redirect result FIRST
+    const checkRedirect = async () => {
+      try {
+        console.log('🔍 Checking redirect result...');
+        const result = await getRedirectResult(auth);
+        
+        if (result && result.user) {
+          console.log('✅ Redirect success:', result.user.email);
+          const userRef = doc(db, 'users', result.user.uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (!userSnap.exists()) {
+            const pendingRole = localStorage.getItem('pendingGoogleRole') as UserRole || 'buyer';
+            const newUser: UserData = {
+              uid: result.user.uid,
+              email: result.user.email!,
+              displayName: result.user.displayName || 'User',
+              role: pendingRole,
+              createdAt: new Date().toISOString(),
+            };
+            await setDoc(userRef, newUser);
+            console.log('✅ User created');
+          }
+          localStorage.removeItem('pendingGoogleRole');
+        } else {
+          console.log('ℹ️ No redirect result');
+        }
+      } catch (error: any) {
+        console.error('❌ Redirect error:', error.code, error.message);
+      }
+    };
+    
+    checkRedirect();
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('👤 Auth state:', user ? user.email : 'logged out');
       setUser(user);
       
       if (user) {
@@ -66,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           setUserData(userDoc.data() as UserData);
+          console.log('✅ User data loaded');
         } else {
           // Check if this is from a redirect result
           const pendingRole = localStorage.getItem('pendingGoogleRole') as UserRole | null;
@@ -80,6 +118,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await setDoc(doc(db, 'users', user.uid), newUser);
             setUserData(newUser);
             localStorage.removeItem('pendingGoogleRole');
+            console.log('✅ New user created');
+          } else {
+            // Create default buyer account
+            const newUser: UserData = {
+              uid: user.uid,
+              email: user.email!,
+              displayName: user.displayName || 'User',
+              role: 'buyer',
+              createdAt: new Date().toISOString(),
+            };
+            await setDoc(doc(db, 'users', user.uid), newUser);
+            setUserData(newUser);
+            console.log('✅ Default buyer created');
           }
         }
       } else {
@@ -87,30 +138,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       setLoading(false);
-    });
-
-    // Check for redirect result on mount
-    getRedirectResult(auth).then(async (result) => {
-      if (result && result.user) {
-        console.log('✓ Redirect sign-in successful');
-        const userRef = doc(db, 'users', result.user.uid);
-        const userSnap = await getDoc(userRef);
-        
-        if (!userSnap.exists()) {
-          const pendingRole = localStorage.getItem('pendingGoogleRole') as UserRole || 'buyer';
-          const newUser: UserData = {
-            uid: result.user.uid,
-            email: result.user.email!,
-            displayName: result.user.displayName || 'User',
-            role: pendingRole,
-            createdAt: new Date().toISOString(),
-          };
-          await setDoc(userRef, newUser);
-          localStorage.removeItem('pendingGoogleRole');
-        }
-      }
-    }).catch((error) => {
-      console.error('Redirect result error:', error);
     });
 
     return unsubscribe;
