@@ -109,6 +109,29 @@ export default function OrdersPage() {
           </p>
         </div>
 
+        {/* Review Incentive Banner */}
+        <div className="bg-gradient-to-r from-gold/20 to-terracotta/20 border-2 border-gold/40 rounded-lg p-4 sm:p-6 mb-8">
+          <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+            <div className="text-4xl sm:text-5xl">🎁</div>
+            <div className="flex-1">
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-navy mb-2">
+                Get 10% Off Your Next Order!
+              </h2>
+              <p className="text-sm sm:text-base text-navy/80 mb-3">
+                Leave a review for any delivered item and receive an <strong>instant 10% discount code</strong> for your next purchase!
+              </p>
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-navy/70">
+                <span>⭐</span>
+                <span>Click "Review" below</span>
+                <span className="hidden sm:inline">→</span>
+                <span>Write review (1-5 stars)</span>
+                <span className="hidden sm:inline">→</span>
+                <span>Get discount code!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {loadingOrders ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">📦</div>
@@ -162,7 +185,7 @@ export default function OrdersPage() {
                     {order.items.map((item, index) => {
                       const reviewKey = `${order.id}-${item.productId}`;
                       const hasReviewed = reviewedProducts.has(reviewKey);
-                      const canReview = order.status === 'delivered' || order.status === 'completed';
+                      const canReview = order.status === 'delivered';
 
                       return (
                         <div key={index} className="flex gap-4 items-start pb-4 border-b border-olive/10 last:border-0">

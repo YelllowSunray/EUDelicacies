@@ -55,7 +55,10 @@ export default function ReviewForm({
         comment: comment.trim(),
       });
 
-      alert("✓ Thank you for your review!");
+      // Generate discount code (simple format: REVIEW10-XXXXX)
+      const discountCode = `REVIEW10-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      
+      alert(`✓ Thank you for your review!\n\n🎉 Here's your 10% discount code:\n\n${discountCode}\n\nUse this code on your next order!\n(Save this code - it won't be shown again)`);
       onReviewSubmitted();
     } catch (err) {
       console.error("Error submitting review:", err);
@@ -70,6 +73,17 @@ export default function ReviewForm({
       <h3 className="font-serif text-xl font-bold text-navy mb-4">
         Review: {productName}
       </h3>
+
+      {/* Discount Incentive */}
+      <div className="bg-gradient-to-r from-gold/10 to-terracotta/10 border border-gold/30 rounded-lg p-4 mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-2xl">🎁</span>
+          <span className="font-bold text-navy">Get 10% Off!</span>
+        </div>
+        <p className="text-sm text-navy/70">
+          Complete this review and receive an instant <strong>10% discount code</strong> for your next purchase!
+        </p>
+      </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm">

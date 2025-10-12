@@ -72,10 +72,16 @@ function OrderSuccessContent() {
             </ul>
           </div>
 
-          <div className="bg-cream border-2 border-gold/30 rounded-lg p-5 mb-8">
-            <p className="text-sm text-navy font-medium mb-1">⭐ Love what you bought?</p>
-            <p className="text-xs text-navy/70">
-              After receiving your order, visit your Order History to leave a review and help other food lovers discover great products!
+          <div className="bg-gradient-to-r from-gold/20 to-terracotta/20 border-2 border-gold/40 rounded-lg p-6 mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="text-3xl">⭐</div>
+              <h3 className="font-serif text-xl font-bold text-navy">Get 10% Off Your Next Order!</h3>
+            </div>
+            <p className="text-sm text-navy/80 mb-2">
+              <strong>Leave a review</strong> after receiving your order and we'll send you a <strong>10% discount code</strong> for your next purchase!
+            </p>
+            <p className="text-xs text-navy/60">
+              Visit <strong>My Orders</strong> → Click <strong>"⭐ Review"</strong> on any delivered item → Get your discount code instantly!
             </p>
           </div>
 

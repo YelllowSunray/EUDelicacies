@@ -222,6 +222,21 @@ The seller(s) will contact you within 24-48 hours via email or phone to:
 📱 Track Your Order:
 Visit ${typeof window !== 'undefined' ? window.location.origin : ''}/orders
 
+━━━━━━━━━━━━━━━━━━━━━━
+⭐ GET 10% OFF YOUR NEXT ORDER!
+━━━━━━━━━━━━━━━━━━━━━━
+
+Leave a review after receiving your order and get a 10% discount code!
+
+How to get your discount:
+1. Receive your order
+2. Go to My Orders page
+3. Click "⭐ Review" on any delivered item
+4. Write your review (text + 1-5 stars)
+5. Get your 10% discount code instantly!
+
+Your honest feedback helps other food lovers discover great products!
+
 Need help? Contact us at iyersamir@gmail.com
 
 Best regards,
