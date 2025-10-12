@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy, limit as limitQuery } from 'firebase/firestore';
+import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where, orderBy, limit as limitQuery } from 'firebase/firestore';
 import { db } from './firebase';
 import { COLLECTIONS, FirebaseProduct } from './firebase-collections';
 
@@ -94,6 +94,30 @@ export async function getAllProducts(limitCount?: number): Promise<SellerProduct
   } catch (error) {
     console.error('Error fetching products:', error);
     return [];
+  }
+}
+
+// Get a single product by ID
+export async function getProductById(productId: string): Promise<SellerProduct | null> {
+  try {
+    const productRef = doc(db, COLLECTIONS.PRODUCTS, productId);
+    const productSnap = await getDoc(productRef);
+    
+    if (!productSnap.exists()) {
+      console.log('Product not found:', productId);
+      return null;
+    }
+    
+    const product = {
+      id: productSnap.id,
+      ...productSnap.data()
+    } as SellerProduct;
+    
+    console.log('Loaded product:', product.name);
+    return product;
+  } catch (error) {
+    console.error('Error fetching product by ID:', error);
+    return null;
   }
 }
 

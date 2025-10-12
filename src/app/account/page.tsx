@@ -145,9 +145,17 @@ export default function AccountPage() {
           <div className="lg:col-span-3">
             {activeTab === "profile" && (
               <div className="bg-white rounded-lg shadow-md p-8">
-                <h2 className="font-serif text-2xl font-bold text-navy mb-6">
-                  Profile Information
-                </h2>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="font-serif text-2xl font-bold text-navy">
+                    Profile Information
+                  </h2>
+                  <Link 
+                    href="/settings"
+                    className="px-4 py-2 bg-olive/10 text-olive rounded-lg hover:bg-olive/20 transition-colors font-medium"
+                  >
+                    ⚙️ Settings
+                  </Link>
+                </div>
 
                 <div className="space-y-6">
                   <div>
@@ -196,12 +204,6 @@ export default function AccountPage() {
                       disabled
                       className="w-full px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
                     />
-                  </div>
-
-                  <div className="pt-4">
-                    <button className="px-6 py-3 bg-terracotta text-white rounded-full hover:bg-terracotta/90 transition-colors font-medium">
-                      Edit Profile
-                    </button>
                   </div>
                 </div>
               </div>

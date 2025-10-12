@@ -243,6 +243,13 @@ export default function Navbar() {
                     >
                       My Orders
                     </Link>
+                    <Link 
+                      href="/settings" 
+                      className="text-navy hover:text-terracotta transition-colors font-medium py-2 block"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Settings
+                    </Link>
                     <button
                       onClick={() => {
                         handleLogout();

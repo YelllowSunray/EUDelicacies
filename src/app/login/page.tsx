@@ -100,9 +100,9 @@ export default function LoginPage() {
                   Remember me
                 </label>
               </div>
-              <a href="#" className="text-sm text-terracotta hover:text-terracotta/80">
+              <Link href="/forgot-password" className="text-sm text-terracotta hover:text-terracotta/80">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <button
