@@ -72,6 +72,17 @@ export default function CheckoutPage() {
     e.preventDefault();
     setError("");
 
+    // Ensure user exists and has email
+    if (!user) {
+      setError("You must be logged in to place an order.");
+      return;
+    }
+
+    if (!user.email) {
+      setError("Your account must have an email address to place orders.");
+      return;
+    }
+
     // Validation
     if (!shippingAddress.fullName || !shippingAddress.addressLine1 || 
         !shippingAddress.city || !shippingAddress.postalCode || 
@@ -84,13 +95,6 @@ export default function CheckoutPage() {
     setError("");
 
     try {
-      // Ensure user exists
-      if (!user) {
-        setError("You must be logged in to place an order.");
-        setIsSubmitting(false);
-        return;
-      }
-
       // Convert cart items to order items
       const orderItems: OrderItem[] = items.map(item => ({
         productId: item.productId,
@@ -193,10 +197,18 @@ export default function CheckoutPage() {
       });
 
       if (buyerResponse.ok) {
-        console.log('✅ Buyer email sent successfully');
+        const result = await buyerResponse.json();
+        console.log('✅ Buyer email sent successfully:', result);
       } else {
-        const error = await buyerResponse.json();
-        console.error('❌ Buyer email failed:', error);
+        console.error('❌ Buyer email failed with status:', buyerResponse.status);
+        const errorText = await buyerResponse.text();
+        console.error('❌ Error details:', errorText);
+        try {
+          const errorJson = JSON.parse(errorText);
+          console.error('❌ Parsed error:', errorJson);
+        } catch (e) {
+          console.error('❌ Raw error:', errorText);
+        }
       }
     } catch (error) {
       console.error('❌ Error sending buyer email:', error);
@@ -231,10 +243,18 @@ export default function CheckoutPage() {
       });
 
       if (sellerResponse.ok) {
-        console.log('✅ Seller email sent successfully');
+        const result = await sellerResponse.json();
+        console.log('✅ Seller email sent successfully:', result);
       } else {
-        const error = await sellerResponse.json();
-        console.error('❌ Seller email failed:', error);
+        console.error('❌ Seller email failed with status:', sellerResponse.status);
+        const errorText = await sellerResponse.text();
+        console.error('❌ Error details:', errorText);
+        try {
+          const errorJson = JSON.parse(errorText);
+          console.error('❌ Parsed error:', errorJson);
+        } catch (e) {
+          console.error('❌ Raw error:', errorText);
+        }
       }
     } catch (error) {
       console.error('❌ Error sending seller email:', error);

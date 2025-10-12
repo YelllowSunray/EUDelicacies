@@ -12,8 +12,23 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(request: NextRequest) {
   try {
+    // Check environment variables
+    console.log('🔍 Checking environment variables...');
+    console.log('GMAIL_USER:', process.env.GMAIL_USER ? '✅ Set' : '❌ Missing');
+    console.log('GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? '✅ Set' : '❌ Missing');
+
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      console.error('❌ Gmail credentials not found in environment variables');
+      return NextResponse.json(
+        { error: 'Email service not configured. Please check server environment variables.' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { type, orderNumber, customerEmail, customerName, orderTotal, items, shippingAddress, notes, sellers } = body;
+
+    console.log('📧 Email request:', { type, orderNumber, customerEmail });
 
     // Validate required fields
     if (!type || !orderNumber || !customerEmail) {
@@ -125,14 +140,16 @@ export async function POST(request: NextRequest) {
         </html>
       `;
 
-      await transporter.sendMail({
+      console.log('📤 Sending buyer email to:', customerEmail);
+      const info = await transporter.sendMail({
         from: `"EU Delicacies" <${process.env.GMAIL_USER}>`,
         to: customerEmail,
         subject: `✅ Order Confirmation #${orderNumber}`,
         html: buyerHtml,
       });
 
-      return NextResponse.json({ success: true, message: 'Buyer email sent' });
+      console.log('✅ Buyer email sent successfully:', info.messageId);
+      return NextResponse.json({ success: true, message: 'Buyer email sent', messageId: info.messageId });
     }
 
     if (type === 'seller_notification') {
@@ -245,14 +262,16 @@ export async function POST(request: NextRequest) {
         </html>
       `;
 
-      await transporter.sendMail({
+      console.log('📤 Sending seller notification to: iyersamir@gmail.com');
+      const info = await transporter.sendMail({
         from: `"EU Delicacies Orders" <${process.env.GMAIL_USER}>`,
         to: 'iyersamir@gmail.com', // Seller email
         subject: `🔔 NEW ORDER #${orderNumber} - Action Required`,
         html: sellerHtml,
       });
 
-      return NextResponse.json({ success: true, message: 'Seller email sent' });
+      console.log('✅ Seller email sent successfully:', info.messageId);
+      return NextResponse.json({ success: true, message: 'Seller email sent', messageId: info.messageId });
     }
 
     return NextResponse.json(
