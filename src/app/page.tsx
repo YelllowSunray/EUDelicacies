@@ -1,103 +1,136 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import HeroSection from "@/components/HeroSection";
+import CountryCard from "@/components/CountryCard";
+import { getAllCountries } from "@/lib/firebase-countries";
+import { FirebaseCountry } from "@/lib/firebase-collections";
+import Link from "next/link";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [countries, setCountries] = useState<FirebaseCountry[]>([]);
+  const [loading, setLoading] = useState(true);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    loadCountries();
+  }, []);
+
+  const loadCountries = async () => {
+    setLoading(true);
+    const data = await getAllCountries();
+    // Show only first 6 countries on homepage
+    setCountries(data.slice(0, 6));
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <HeroSection />
+      
+      {/* Featured Countries Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center mb-12">
+          <h2 className="font-serif text-4xl font-bold text-navy mb-4">
+            Explore Our Countries
+          </h2>
+          <p className="text-lg text-navy/70 max-w-2xl mx-auto">
+            Discover authentic flavours from European nations, each offering their own unique culinary traditions.
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🌍</div>
+            <p className="text-navy/70">Loading countries...</p>
+          </div>
+        ) : countries.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {countries.map((country) => (
+                <CountryCard key={country.id} country={country} />
+              ))}
+            </div>
+            <div className="text-center mt-12">
+              <Link
+                href="/countries"
+                className="inline-block px-8 py-3 bg-olive text-white rounded-full hover:bg-olive/90 transition-colors font-semibold"
+              >
+                View All Countries →
+              </Link>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-12 bg-cream rounded-lg">
+            <div className="text-6xl mb-4">🌍</div>
+            <p className="text-navy/70 mb-4">No countries available yet.</p>
+            <Link
+              href="/admin/seed"
+              className="inline-block px-6 py-3 bg-terracotta text-white rounded-full hover:bg-terracotta/90 transition-colors font-medium"
+            >
+              Seed Data
+            </Link>
+          </div>
+        )}
+      </section>
+
+      {/* Why Choose Us Section */}
+      <section className="bg-olive/5 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="font-serif text-4xl font-bold text-navy mb-4">
+              Why EU Delicacies?
+            </h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-5xl mb-4">✓</div>
+              <h3 className="font-serif text-xl font-bold text-navy mb-3">
+                Verified Authenticity
+              </h3>
+              <p className="text-navy/70">
+                Only genuine products from verified local producers and artisan makers across Europe.
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-5xl mb-4">🌱</div>
+              <h3 className="font-serif text-xl font-bold text-navy mb-3">
+                Sustainable & Ethical
+              </h3>
+              <p className="text-navy/70">
+                Supporting small-batch producers who prioritize quality, tradition, and eco-friendly practices.
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-5xl mb-4">📦</div>
+              <h3 className="font-serif text-xl font-bold text-navy mb-3">
+                EU-Wide Delivery
+              </h3>
+              <p className="text-navy/70">
+                Fast, reliable shipping across all European Union countries with smart logistics.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <h2 className="font-serif text-4xl font-bold text-navy mb-6">
+          Start Your European Taste Journey
+        </h2>
+        <p className="text-xl text-navy/70 mb-8 max-w-2xl mx-auto">
+          From Alpine cheeses to Mediterranean oils, discover the authentic flavours that make Europe special.
+        </p>
+        <Link 
+          href="/shop" 
+          className="inline-block px-10 py-4 bg-terracotta text-white rounded-full hover:bg-terracotta/90 transition-colors font-semibold text-lg"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Browse All Products
+        </Link>
+      </section>
     </div>
   );
 }
