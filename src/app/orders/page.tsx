@@ -15,11 +15,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<FirebaseOrder[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [reviewingProduct, setReviewingProduct] = useState<{
-    productId: string;
-    productName: string;
-    orderId: string;
-  } | null>(null);
+  const [reviewingProducts, setReviewingProducts] = useState<Set<string>>(new Set());
   const [reviewedProducts, setReviewedProducts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -60,9 +56,25 @@ export default function OrdersPage() {
     }
   };
 
-  const handleReviewSubmitted = () => {
-    setReviewingProduct(null);
+  const handleReviewSubmitted = (productKey: string) => {
+    setReviewingProducts(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(productKey);
+      return newSet;
+    });
     loadOrders(); // Reload to update reviewed status
+  };
+
+  const toggleReviewForm = (productKey: string) => {
+    setReviewingProducts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productKey)) {
+        newSet.delete(productKey);
+      } else {
+        newSet.add(productKey);
+      }
+      return newSet;
+    });
   };
 
   if (loading || !user) {
@@ -73,29 +85,6 @@ export default function OrdersPage() {
     );
   }
 
-  if (reviewingProduct) {
-    return (
-      <div className="min-h-screen bg-cream py-12">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button
-            onClick={() => setReviewingProduct(null)}
-            className="mb-6 text-olive hover:text-terracotta transition-colors flex items-center gap-2"
-          >
-            ← Back to Orders
-          </button>
-          <ReviewForm
-            productId={reviewingProduct.productId}
-            productName={reviewingProduct.productName}
-            userId={user.uid}
-            userName={user.displayName || "Anonymous"}
-            orderId={reviewingProduct.orderId}
-            onReviewSubmitted={handleReviewSubmitted}
-            onCancel={() => setReviewingProduct(null)}
-          />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-cream py-12">
@@ -186,67 +175,81 @@ export default function OrdersPage() {
                       const reviewKey = `${order.id}-${item.productId}`;
                       const hasReviewed = reviewedProducts.has(reviewKey);
                       const canReview = order.status === 'delivered';
+                      const isReviewingThis = reviewingProducts.has(reviewKey);
 
                       return (
-                        <div key={index} className="flex gap-4 items-start pb-4 border-b border-olive/10 last:border-0">
-                          {/* Product Image */}
-                          <div className="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-olive/10 to-terracotta/10 rounded-lg overflow-hidden relative">
-                            {item.productImage ? (
-                              <Image
-                                src={item.productImage}
-                                alt={item.productName}
-                                fill
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-3xl">
-                                🍴
-                              </div>
-                            )}
-                          </div>
+                        <div key={index} className="pb-4 border-b border-olive/10 last:border-0">
+                          <div className="flex gap-4 items-start">
+                            {/* Product Image */}
+                            <div className="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-olive/10 to-terracotta/10 rounded-lg overflow-hidden relative">
+                              {item.productImage ? (
+                                <Image
+                                  src={item.productImage}
+                                  alt={item.productName}
+                                  fill
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-3xl">
+                                  🍴
+                                </div>
+                              )}
+                            </div>
 
-                          {/* Product Details */}
-                          <div className="flex-1 min-w-0">
-                            <Link 
-                              href={`/products/${item.productId}`}
-                              className="font-semibold text-navy hover:text-terracotta transition-colors block mb-1"
-                            >
-                              {item.productName}
-                            </Link>
-                            <p className="text-sm text-navy/60 mb-1">
-                              by {item.sellerName}
-                            </p>
-                            <div className="flex items-center gap-4 text-sm">
-                              <span className="text-navy/70">Qty: {item.quantity}</span>
-                              <span className="text-navy/70">€{item.pricePerUnit.toFixed(2)} each</span>
-                              <span className="font-semibold text-navy">€{item.subtotal.toFixed(2)}</span>
+                            {/* Product Details */}
+                            <div className="flex-1 min-w-0">
+                              <Link 
+                                href={`/products/${item.productId}`}
+                                className="font-semibold text-navy hover:text-terracotta transition-colors block mb-1"
+                              >
+                                {item.productName}
+                              </Link>
+                              <p className="text-sm text-navy/60 mb-1">
+                                by {item.sellerName}
+                              </p>
+                              <div className="flex items-center gap-4 text-sm">
+                                <span className="text-navy/70">Qty: {item.quantity}</span>
+                                <span className="text-navy/70">€{item.pricePerUnit.toFixed(2)} each</span>
+                                <span className="font-semibold text-navy">€{item.subtotal.toFixed(2)}</span>
+                              </div>
+                            </div>
+
+                            {/* Review Button */}
+                            <div className="flex-shrink-0">
+                              {hasReviewed ? (
+                                <div className="text-center">
+                                  <div className="text-2xl mb-1">✅</div>
+                                  <p className="text-xs text-green-600 font-medium">Reviewed</p>
+                                </div>
+                              ) : canReview ? (
+                                <button
+                                  onClick={() => toggleReviewForm(reviewKey)}
+                                  className="px-4 py-2 bg-gold/20 text-navy rounded-lg hover:bg-gold/30 transition-colors font-medium text-sm border border-gold/40"
+                                >
+                                  {isReviewingThis ? '✕ Cancel' : '⭐ Review'}
+                                </button>
+                              ) : (
+                                <div className="text-center">
+                                  <p className="text-xs text-navy/40">Review after delivery</p>
+                                </div>
+                              )}
                             </div>
                           </div>
 
-                          {/* Review Button */}
-                          <div className="flex-shrink-0">
-                            {hasReviewed ? (
-                              <div className="text-center">
-                                <div className="text-2xl mb-1">✅</div>
-                                <p className="text-xs text-green-600 font-medium">Reviewed</p>
-                              </div>
-                            ) : canReview ? (
-                              <button
-                                onClick={() => setReviewingProduct({
-                                  productId: item.productId,
-                                  productName: item.productName,
-                                  orderId: order.id
-                                })}
-                                className="px-4 py-2 bg-gold/20 text-navy rounded-lg hover:bg-gold/30 transition-colors font-medium text-sm border border-gold/40"
-                              >
-                                ⭐ Review
-                              </button>
-                            ) : (
-                              <div className="text-center">
-                                <p className="text-xs text-navy/40">Review after delivery</p>
-                              </div>
-                            )}
-                          </div>
+                          {/* Inline Review Form */}
+                          {isReviewingThis && canReview && (
+                            <div className="mt-4 pl-24">
+                              <ReviewForm
+                                productId={item.productId}
+                                productName={item.productName}
+                                userId={user.uid}
+                                userName={user.displayName || "Anonymous"}
+                                orderId={order.id}
+                                onReviewSubmitted={() => handleReviewSubmitted(reviewKey)}
+                                onCancel={() => toggleReviewForm(reviewKey)}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}

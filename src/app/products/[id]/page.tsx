@@ -231,7 +231,38 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Reviews Section */}
-        <div className="mt-16 pt-8 border-t border-olive/20">
+        <div className="mt-16 pt-8 border-t-2 border-olive/20">
+          <div className="mb-8">
+            <h2 className="font-serif text-4xl font-bold text-navy mb-4 flex items-center gap-3">
+              <span>⭐</span> Customer Reviews
+            </h2>
+            {!user ? (
+              <div className="bg-gradient-to-br from-cream to-gold/10 border-2 border-gold/30 rounded-lg p-6 text-center mb-8">
+                <div className="text-5xl mb-3">🔒</div>
+                <p className="text-navy/70 mb-4 text-lg">
+                  Want to leave a review? Please log in first!
+                </p>
+                <Link
+                  href="/login"
+                  className="inline-block px-8 py-3 bg-terracotta text-white rounded-full hover:bg-terracotta/90 transition-colors font-semibold shadow-md"
+                >
+                  Sign In to Review
+                </Link>
+              </div>
+            ) : (
+              <div className="bg-gradient-to-r from-gold/20 to-terracotta/20 border-2 border-gold/40 rounded-lg p-6 mb-8">
+                <div className="flex items-start gap-3">
+                  <div className="text-3xl">🎁</div>
+                  <div>
+                    <h3 className="font-semibold text-navy mb-2 text-lg">Get 10% Off Your Next Order!</h3>
+                    <p className="text-sm text-navy/80">
+                      Purchase and receive this product, then leave a review from your <Link href="/orders" className="text-terracotta hover:underline font-semibold">Orders page</Link> to get an instant discount code!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           <ProductReviews productId={product.id!} />
         </div>
       </div>

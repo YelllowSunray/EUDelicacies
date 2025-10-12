@@ -26,70 +26,73 @@ export default function SelfieUpload({ userId, currentSelfie, onSelfieUpdate }: 
 
   const startCamera = async () => {
     setError("");
+    setShowCamera(true); // Show video element FIRST
     setCameraLoading(true);
     
-    try {
-      console.log('🎥 Checking camera support...');
-      
-      // Check if getUserMedia is supported
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Camera not supported in this browser");
-      }
+    // Wait a tick for React to render the video element
+    setTimeout(async () => {
+      try {
+        console.log('🎥 Checking camera support...');
+        
+        // Check if getUserMedia is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("Camera not supported in this browser");
+        }
 
-      console.log('📹 Requesting camera access...');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 640, height: 480 }
-      });
-      
-      console.log('✓ Camera access granted');
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setShowCamera(true); // Show video element immediately
+        console.log('📹 Requesting camera access...');
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          },
+          audio: false
+        });
         
-        // Try to play immediately
-        const playVideo = async () => {
-          try {
-            await videoRef.current?.play();
-            console.log('✓ Video playing');
+        console.log('✓ Camera access granted');
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          streamRef.current = stream;
+          
+          // Wait for metadata to load
+          videoRef.current.onloadedmetadata = async () => {
+            console.log('✓ Video metadata loaded');
+            try {
+              if (videoRef.current) {
+                await videoRef.current.play();
+                console.log('✓ Video playing');
+              }
+            } catch (e) {
+              console.log('Auto-play error (this is normal):', e);
+            }
             setCameraLoading(false);
-          } catch (e) {
-            console.log('Auto-play blocked, waiting for metadata...');
-          }
-        };
+          };
+          
+          // Fallback timeout
+          setTimeout(() => {
+            console.log('⏰ Timeout - clearing loading state');
+            setCameraLoading(false);
+          }, 3000);
+        }
+      } catch (err: any) {
+        setCameraLoading(false);
+        setShowCamera(false);
+        console.error('❌ Camera error:', err);
+        console.error('Error name:', err.name);
+        console.error('Error message:', err.message);
         
-        playVideo();
-        
-        // Also set up metadata event as backup
-        videoRef.current.onloadedmetadata = () => {
-          console.log('✓ Video metadata loaded');
-          setCameraLoading(false); // Clear loading immediately when metadata loads
-        };
-        
-        // Aggressive timeout - clear loading after 2 seconds regardless
-        setTimeout(() => {
-          console.log('⏰ 2-second timeout - clearing loading state');
-          setCameraLoading(false);
-        }, 2000);
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setError("🚫 Camera permission denied. Please allow camera access in your browser settings or upload a photo instead.");
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          setError("📷 No camera found on your device. Please upload a photo instead.");
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          setError("⚠️ Camera is already in use by another app. Please close other apps and try again, or upload a photo instead.");
+        } else {
+          setError(`Unable to access camera: ${err.message}. Please upload a photo instead.`);
+        }
       }
-    } catch (err: any) {
-      setCameraLoading(false);
-      setShowCamera(false);
-      console.error('❌ Camera error:', err);
-      console.error('Error name:', err.name);
-      console.error('Error message:', err.message);
-      
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError("🚫 Camera permission denied. Please allow camera access in your browser settings or upload a photo instead.");
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        setError("📷 No camera found on your device. Please upload a photo instead.");
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        setError("⚠️ Camera is already in use by another app. Please close other apps and try again, or upload a photo instead.");
-      } else {
-        setError(`Unable to access camera: ${err.message}. Please upload a photo instead.`);
-      }
-    }
+    }, 100); // Give React time to render the video element
   };
 
   const stopCamera = () => {
@@ -279,37 +282,42 @@ export default function SelfieUpload({ userId, currentSelfie, onSelfieUpdate }: 
       {/* Camera View */}
       {showCamera && (
         <div className="mb-4">
-          <div className="relative bg-gray-900 rounded-lg overflow-hidden" style={{ minHeight: '400px' }}>
+          <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              className="w-full h-full rounded-lg"
-              style={{ minHeight: '400px', maxHeight: '500px' }}
+              className="w-full h-full object-cover"
             />
             {cameraLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
                 <div className="text-center">
-                  <div className="text-4xl mb-2 animate-pulse">📷</div>
-                  <p className="text-white font-medium text-sm">Camera is starting...</p>
+                  <div className="text-5xl mb-3 animate-bounce">📷</div>
+                  <p className="text-white font-semibold text-lg mb-2">Starting Camera...</p>
+                  <p className="text-white/70 text-sm">Please allow camera access if prompted</p>
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-4">
             <button
               onClick={capturePhoto}
               disabled={cameraLoading}
-              className="flex-1 py-2 bg-terracotta text-white rounded-lg hover:bg-terracotta/90 transition-colors disabled:opacity-50"
+              className="flex-1 py-3 bg-terracotta text-white rounded-lg hover:bg-terracotta/90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
-              📷 Capture
+              📸 Capture Photo
             </button>
             <button
               onClick={stopCamera}
-              className="flex-1 py-2 bg-gray-200 text-navy rounded-lg hover:bg-gray-300 transition-colors"
+              className="px-6 py-3 bg-gray-200 text-navy rounded-lg hover:bg-gray-300 transition-colors font-medium"
             >
-              Cancel
+              ✕ Cancel
             </button>
           </div>
         </div>
@@ -345,32 +353,23 @@ export default function SelfieUpload({ userId, currentSelfie, onSelfieUpdate }: 
         </div>
       )}
 
-      {/* Camera Loading State (only when camera not shown yet) */}
-      {cameraLoading && !showCamera && (
-        <div className="mb-4 text-center py-8 bg-cream rounded-lg">
-          <div className="text-4xl mb-3 animate-pulse">📷</div>
-          <p className="text-navy font-medium">Starting camera...</p>
-          <p className="text-xs text-navy/60 mt-2">
-            Please allow camera access when prompted by your browser
-          </p>
-        </div>
-      )}
-
       {/* Action Buttons */}
-      {!showCamera && !capturedImage && !cameraLoading && (
+      {!showCamera && !capturedImage && (
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={startCamera}
             disabled={cameraLoading}
-            className="py-3 bg-terracotta text-white rounded-lg hover:bg-terracotta/90 transition-colors font-medium disabled:opacity-50"
+            className="py-4 bg-gradient-to-r from-terracotta to-terracotta/90 text-white rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            📷 Take Photo
+            <span className="text-2xl">📷</span>
+            <span>Take Photo</span>
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="py-3 bg-olive text-white rounded-lg hover:bg-olive/90 transition-colors font-medium"
+            className="py-4 bg-gradient-to-r from-olive to-olive/90 text-white rounded-lg hover:shadow-lg transition-all font-semibold flex items-center justify-center gap-2"
           >
-            📁 Upload Photo
+            <span className="text-2xl">📁</span>
+            <span>Upload Photo</span>
           </button>
         </div>
       )}

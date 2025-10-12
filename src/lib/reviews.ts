@@ -23,6 +23,7 @@ export interface Review {
  */
 export async function addReview(reviewData: Omit<Review, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   try {
+    console.log('📝 Adding review for product:', reviewData.productId);
     const reviewsRef = collection(db, 'reviews');
     
     const newReview = {
@@ -32,13 +33,14 @@ export async function addReview(reviewData: Omit<Review, 'id' | 'createdAt' | 'u
     };
 
     const docRef = await addDoc(reviewsRef, newReview);
+    console.log('✅ Review added with ID:', docRef.id);
     
     // Update product's average rating
     await updateProductRating(reviewData.productId);
     
     return docRef.id;
   } catch (error) {
-    console.error('Error adding review:', error);
+    console.error('❌ Error adding review:', error);
     throw error;
   }
 }
@@ -51,8 +53,7 @@ export async function getProductReviews(productId: string): Promise<Review[]> {
     const reviewsRef = collection(db, 'reviews');
     const q = query(
       reviewsRef,
-      where('productId', '==', productId),
-      orderBy('createdAt', 'desc')
+      where('productId', '==', productId)
     );
     
     const snapshot = await getDocs(q);
@@ -65,6 +66,14 @@ export async function getProductReviews(productId: string): Promise<Review[]> {
       } as Review);
     });
     
+    // Sort by createdAt in JavaScript (to avoid needing index)
+    reviews.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA; // Newest first
+    });
+    
+    console.log(`📝 Loaded ${reviews.length} reviews for product ${productId}`);
     return reviews;
   } catch (error) {
     console.error('Error fetching product reviews:', error);

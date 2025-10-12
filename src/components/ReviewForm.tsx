@@ -60,9 +60,20 @@ export default function ReviewForm({
       
       alert(`✓ Thank you for your review!\n\n🎉 Here's your 10% discount code:\n\n${discountCode}\n\nUse this code on your next order!\n(Save this code - it won't be shown again)`);
       onReviewSubmitted();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error submitting review:", err);
-      setError("Failed to submit review. Please try again.");
+      console.error("Error details:", err.code, err.message);
+      
+      let errorMessage = "Failed to submit review. ";
+      if (err.code === 'permission-denied') {
+        errorMessage += "Permission denied. Please make sure Firestore rules are deployed.";
+      } else if (err.message) {
+        errorMessage += err.message;
+      } else {
+        errorMessage += "Please try again.";
+      }
+      
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -97,7 +108,7 @@ export default function ReviewForm({
           <label className="block text-sm font-medium text-navy mb-3">
             Your Rating *
           </label>
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
@@ -105,19 +116,25 @@ export default function ReviewForm({
                 onClick={() => setRating(star)}
                 onMouseEnter={() => setHoveredRating(star)}
                 onMouseLeave={() => setHoveredRating(0)}
-                className="text-4xl transition-transform hover:scale-110"
+                className="p-2 sm:p-3 text-4xl sm:text-5xl transition-all hover:scale-110 active:scale-95 rounded-lg hover:bg-gold/10 focus:outline-none focus:ring-2 focus:ring-gold"
+                aria-label={`Rate ${star} out of 5 stars`}
               >
                 {star <= (hoveredRating || rating) ? '⭐' : '☆'}
               </button>
             ))}
           </div>
           {rating > 0 && (
-            <p className="text-sm text-navy/60 mt-2">
-              {rating === 1 && "Poor"}
-              {rating === 2 && "Fair"}
-              {rating === 3 && "Good"}
-              {rating === 4 && "Very Good"}
-              {rating === 5 && "Excellent"}
+            <p className="text-base font-semibold text-navy mt-3">
+              {rating === 1 && "⭐ Poor"}
+              {rating === 2 && "⭐⭐ Fair"}
+              {rating === 3 && "⭐⭐⭐ Good"}
+              {rating === 4 && "⭐⭐⭐⭐ Very Good"}
+              {rating === 5 && "⭐⭐⭐⭐⭐ Excellent!"}
+            </p>
+          )}
+          {!rating && (
+            <p className="text-sm text-navy/50 mt-2">
+              Tap to select your rating
             </p>
           )}
         </div>

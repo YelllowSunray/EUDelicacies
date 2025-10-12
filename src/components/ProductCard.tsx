@@ -8,6 +8,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getProductRating } from '@/lib/reviews';
 
 interface ProductCardProps {
   product: {
@@ -31,8 +32,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [userSelfie, setUserSelfie] = useState<string>("");
+  const [rating, setRating] = useState({ averageRating: 0, reviewCount: 0 });
   
-  // Load user's selfie
+  // Load user's selfie and product rating
   useEffect(() => {
     const loadUserSelfie = async () => {
       if (user) {
@@ -45,6 +47,14 @@ export default function ProductCard({ product }: ProductCardProps) {
     };
     loadUserSelfie();
   }, [user]);
+
+  useEffect(() => {
+    const loadRating = async () => {
+      const ratingData = await getProductRating(product.id);
+      setRating(ratingData);
+    };
+    loadRating();
+  }, [product.id]);
   
   // Category emoji fallback
   const getCategoryEmoji = (category: string) => {
@@ -135,6 +145,15 @@ export default function ProductCard({ product }: ProductCardProps) {
                     fill
                     className="object-cover"
                   />
+                </div>
+              )}
+
+              {/* Rating Badge */}
+              {rating.reviewCount > 0 && (
+                <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                  <span className="text-yellow-500 text-lg">⭐</span>
+                  <span className="font-bold text-navy text-sm">{rating.averageRating.toFixed(1)}</span>
+                  <span className="text-navy/60 text-xs">({rating.reviewCount})</span>
                 </div>
               )}
             </div>

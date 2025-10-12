@@ -141,37 +141,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async (role: UserRole = 'buyer', useMobile: boolean = false) => {
-    const provider = new GoogleAuthProvider();
-    
-    // Use redirect for mobile devices
-    if (useMobile) {
-      console.log('📱 Using redirect-based Google sign-in for mobile');
-      localStorage.setItem('pendingGoogleRole', role);
-      await signInWithRedirect(auth, provider);
-      // Function returns here, redirect happens, user comes back
-      return;
-    }
-    
-    // Use popup for desktop
-    console.log('💻 Using popup-based Google sign-in for desktop');
-    const result = await signInWithPopup(auth, provider);
-    
-    // Check if user document exists, if not create one
-    const userRef = doc(db, 'users', result.user.uid);
-    const userSnap = await getDoc(userRef);
-    
-    if (!userSnap.exists()) {
-      // Create new user document for Google sign-in
-      const newUser: UserData = {
-        uid: result.user.uid,
-        email: result.user.email!,
-        displayName: result.user.displayName || 'User',
-        role: role,
-        createdAt: new Date().toISOString(),
-      };
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
       
-      await setDoc(userRef, newUser);
-      setUserData(newUser);
+      // Use redirect for mobile devices
+      if (useMobile) {
+        console.log('📱 Using redirect-based Google sign-in for mobile');
+        localStorage.setItem('pendingGoogleRole', role);
+        await signInWithRedirect(auth, provider);
+        // Function returns here, redirect happens, user comes back
+        return;
+      }
+      
+      // Use popup for desktop
+      console.log('💻 Using popup-based Google sign-in for desktop');
+      const result = await signInWithPopup(auth, provider);
+      
+      // Check if user document exists, if not create one
+      const userRef = doc(db, 'users', result.user.uid);
+      const userSnap = await getDoc(userRef);
+      
+      if (!userSnap.exists()) {
+        // Create new user document for Google sign-in
+        const newUser: UserData = {
+          uid: result.user.uid,
+          email: result.user.email!,
+          displayName: result.user.displayName || 'User',
+          role: role,
+          createdAt: new Date().toISOString(),
+        };
+        
+        await setDoc(userRef, newUser);
+        setUserData(newUser);
+      }
+    } catch (error: any) {
+      console.error('❌ Google sign-in error:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      throw error; // Re-throw to be handled by caller
     }
   };
 

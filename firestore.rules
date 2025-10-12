@@ -73,6 +73,16 @@ service cloud.firestore {
       // Only authenticated users can write
       allow write: if isAuthenticated();
     }
+    
+    // Reviews collection
+    match /reviews/{reviewId} {
+      // Anyone can read reviews (for displaying on product pages)
+      allow read: if true;
+      // Only authenticated users can create reviews
+      allow create: if isAuthenticated();
+      // Only the review author can update/delete their review
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
   }
 }
 

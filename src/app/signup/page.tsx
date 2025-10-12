@@ -35,6 +35,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
+      console.log('🔐 Starting Google sign-up, isMobile:', isMobile, 'role:', role);
       await signInWithGoogle(role, isMobile); // Pass mobile flag
       
       // For desktop popup, redirect immediately
@@ -47,24 +48,39 @@ export default function SignupPage() {
         }
       }
     } catch (error: any) {
-      console.error("Google signup error:", error);
+      console.error("❌ Google signup error:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      
       if (error.code === "auth/popup-closed-by-user") {
         setError("Sign-up popup was closed. Please try again.");
+        setLoading(false);
       } else if (error.code === "auth/popup-blocked") {
-        setError("Pop-up blocked. Trying mobile-friendly method...");
+        setError("Pop-up blocked. Switching to mobile-friendly method...");
         // Try redirect as fallback
         try {
+          console.log('🔄 Retrying with redirect method...');
           await signInWithGoogle(role, true);
-        } catch (redirectError) {
-          setError("Failed to sign up. Please try again.");
+          // Will redirect, so don't set loading to false
+        } catch (redirectError: any) {
+          console.error('❌ Redirect also failed:', redirectError);
+          setError(`Failed to signup: ${redirectError.message}`);
+          setLoading(false);
         }
       } else if (error.code === "auth/cancelled-popup-request") {
         // User cancelled, don't show error
         setError("");
+        setLoading(false);
+      } else if (error.code === "auth/unauthorized-domain" || error.code === "auth/operation-not-allowed") {
+        setError("Google Sign-In is not properly configured. Please contact support.");
+        setLoading(false);
+      } else if (error.code === "auth/network-request-failed") {
+        setError("Network error. Please check your internet connection and try again.");
+        setLoading(false);
       } else {
-        setError("Failed to sign up with Google. Please try again.");
+        setError(`Failed to signup: ${error.message || "Please try again."}`);
+        setLoading(false);
       }
-      setLoading(false);
     }
   };
 

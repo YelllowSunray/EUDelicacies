@@ -63,54 +63,92 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   return (
     <div className="space-y-6">
       {/* Rating Summary */}
-      <div className="bg-cream rounded-lg p-6">
-        <div className="flex items-center gap-4">
-          <div className="text-center">
-            <div className="text-5xl font-bold text-navy">
-              {rating.averageRating > 0 ? rating.averageRating.toFixed(1) : "N/A"}
+      {rating.reviewCount > 0 && (
+        <div className="bg-gradient-to-br from-gold/20 to-cream rounded-lg p-8 border-2 border-gold/30">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="text-center">
+              <div className="text-6xl font-bold text-navy mb-2">
+                {rating.averageRating.toFixed(1)}
+              </div>
+              <div className="text-3xl mb-2">
+                {renderStars(rating.averageRating)}
+              </div>
+              <p className="text-sm text-navy/70 font-medium">
+                Based on {rating.reviewCount} {rating.reviewCount === 1 ? 'review' : 'reviews'}
+              </p>
             </div>
-            <div className="text-2xl mt-2">
-              {rating.averageRating > 0 && renderStars(rating.averageRating)}
+            <div className="flex-1 w-full sm:w-auto">
+              <div className="bg-white/50 rounded-lg p-4">
+                <p className="text-sm text-navy/80 text-center sm:text-left">
+                  <strong>Verified Reviews</strong> from customers who purchased this product
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-navy/60 mt-2">
-              {rating.reviewCount} {rating.reviewCount === 1 ? 'review' : 'reviews'}
-            </p>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Reviews List */}
       {reviews.length > 0 ? (
         <div className="space-y-4">
-          <h3 className="font-serif text-2xl font-bold text-navy">
-            Customer Reviews
-          </h3>
-          {reviews.map((review) => (
-            <div key={review.id} className="bg-white border border-olive/20 rounded-lg p-6">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-navy">{review.userName}</span>
-                    <span className="text-sm text-navy/60">
-                      {new Date(review.createdAt).toLocaleDateString()}
-                    </span>
+          <div className="flex items-center justify-between">
+            <h3 className="font-serif text-2xl font-bold text-navy">
+              All Reviews ({reviews.length})
+            </h3>
+          </div>
+          <div className="space-y-4">
+            {reviews.map((review) => (
+              <div key={review.id} className="bg-white border-2 border-olive/20 rounded-lg p-6 hover:border-olive/40 transition-colors">
+                <div className="flex items-start gap-4">
+                  {/* Avatar */}
+                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-olive/20 to-terracotta/20 rounded-full flex items-center justify-center text-2xl">
+                    👤
                   </div>
-                  <div className="text-xl">
-                    {renderStars(review.rating)}
+                  
+                  <div className="flex-1">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="font-semibold text-navy text-lg">{review.userName}</div>
+                        <div className="flex items-center gap-3 mt-1">
+                          <div className="text-2xl">
+                            {renderStars(review.rating)}
+                          </div>
+                          <span className="text-sm text-navy/60">
+                            {new Date(review.createdAt).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium">
+                        ✓ Verified Purchase
+                      </div>
+                    </div>
+                    
+                    {/* Review Text */}
+                    <p className="text-navy/90 leading-relaxed mt-3">
+                      {review.comment}
+                    </p>
                   </div>
                 </div>
               </div>
-              <p className="text-navy/80 leading-relaxed">
-                {review.comment}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="text-center py-12 bg-cream rounded-lg">
-          <div className="text-6xl mb-4">💭</div>
-          <p className="text-navy/70">
-            No reviews yet. Be the first to review this product!
+        <div className="text-center py-16 bg-gradient-to-br from-cream to-olive/5 rounded-lg border-2 border-dashed border-olive/30">
+          <div className="text-7xl mb-4">⭐</div>
+          <h3 className="font-serif text-2xl font-bold text-navy mb-2">
+            No Reviews Yet
+          </h3>
+          <p className="text-navy/70 mb-4">
+            Be the first to share your experience with this product!
+          </p>
+          <p className="text-sm text-navy/60">
+            💡 Purchase this product to leave a review and get 10% off your next order
           </p>
         </div>
       )}
