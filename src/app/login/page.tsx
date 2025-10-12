@@ -1,36 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// Detect if device is mobile
+function isMobileDevice() {
+  if (typeof window === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const [isMobile, setIsMobile] = useState(false);
+  const { signInWithGoogle, user } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+  }, []);
+
+  useEffect(() => {
+    // Redirect if already logged in
+    if (user) {
+      router.push("/");
+    }
+  }, [user, router]);
 
   const handleGoogleSignIn = async () => {
     setError("");
     setLoading(true);
 
     try {
-      await signInWithGoogle('buyer'); // Default to buyer role
-      router.push("/"); // Redirect to home after successful login
+      await signInWithGoogle('buyer', isMobile); // Pass mobile flag
+      
+      // For desktop popup, redirect immediately
+      // For mobile redirect, page will reload automatically
+      if (!isMobile) {
+        router.push("/");
+      }
     } catch (error: any) {
       console.error("Google login error:", error);
       if (error.code === "auth/popup-closed-by-user") {
         setError("Sign-in popup was closed. Please try again.");
       } else if (error.code === "auth/popup-blocked") {
-        setError("Pop-up was blocked by your browser. Please enable pop-ups and try again.");
+        setError("Pop-up blocked. Trying mobile-friendly method...");
+        // Try redirect as fallback
+        try {
+          await signInWithGoogle('buyer', true);
+        } catch (redirectError) {
+          setError("Failed to sign in. Please try again.");
+        }
       } else if (error.code === "auth/cancelled-popup-request") {
         // User cancelled, don't show error
         setError("");
       } else {
         setError("Failed to sign in with Google. Please try again.");
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -65,8 +93,14 @@ export default function LoginPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            {loading ? "Signing in with Google..." : "Sign in with Google"}
+            {loading ? (isMobile ? "Redirecting to Google..." : "Signing in...") : "Sign in with Google"}
           </button>
+          
+          {isMobile && !loading && (
+            <p className="text-xs text-center text-navy/60 mt-3">
+              📱 Mobile-friendly sign-in
+            </p>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-navy/70">

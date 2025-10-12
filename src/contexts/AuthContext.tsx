@@ -9,7 +9,9 @@ import {
   onAuthStateChanged,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -30,7 +32,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, displayName: string, role: UserRole) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: (role?: UserRole) => Promise<void>;
+  signInWithGoogle: (role?: UserRole, useMobile?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   upgradeToSeller: () => Promise<void>;
   downgradeToBuyer: () => Promise<void>;
@@ -64,12 +66,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           setUserData(userDoc.data() as UserData);
+        } else {
+          // Check if this is from a redirect result
+          const pendingRole = localStorage.getItem('pendingGoogleRole') as UserRole | null;
+          if (pendingRole) {
+            const newUser: UserData = {
+              uid: user.uid,
+              email: user.email!,
+              displayName: user.displayName || 'User',
+              role: pendingRole,
+              createdAt: new Date().toISOString(),
+            };
+            await setDoc(doc(db, 'users', user.uid), newUser);
+            setUserData(newUser);
+            localStorage.removeItem('pendingGoogleRole');
+          }
         }
       } else {
         setUserData(null);
       }
       
       setLoading(false);
+    });
+
+    // Check for redirect result on mount
+    getRedirectResult(auth).then(async (result) => {
+      if (result && result.user) {
+        console.log('✓ Redirect sign-in successful');
+        const userRef = doc(db, 'users', result.user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (!userSnap.exists()) {
+          const pendingRole = localStorage.getItem('pendingGoogleRole') as UserRole || 'buyer';
+          const newUser: UserData = {
+            uid: result.user.uid,
+            email: result.user.email!,
+            displayName: result.user.displayName || 'User',
+            role: pendingRole,
+            createdAt: new Date().toISOString(),
+          };
+          await setDoc(userRef, newUser);
+          localStorage.removeItem('pendingGoogleRole');
+        }
+      }
+    }).catch((error) => {
+      console.error('Redirect result error:', error);
     });
 
     return unsubscribe;
@@ -99,8 +140,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signInWithGoogle = async (role: UserRole = 'buyer') => {
+  const signInWithGoogle = async (role: UserRole = 'buyer', useMobile: boolean = false) => {
     const provider = new GoogleAuthProvider();
+    
+    // Use redirect for mobile devices
+    if (useMobile) {
+      console.log('📱 Using redirect-based Google sign-in for mobile');
+      localStorage.setItem('pendingGoogleRole', role);
+      await signInWithRedirect(auth, provider);
+      // Function returns here, redirect happens, user comes back
+      return;
+    }
+    
+    // Use popup for desktop
+    console.log('💻 Using popup-based Google sign-in for desktop');
     const result = await signInWithPopup(auth, provider);
     
     // Check if user document exists, if not create one

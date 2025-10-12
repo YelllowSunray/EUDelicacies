@@ -4,11 +4,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import SelfieUpload from "@/components/SelfieUpload";
 
 export default function AccountPage() {
   const { user, userData, loading, upgradeToSeller, downgradeToBuyer } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"profile" | "orders" | "settings">("profile");
+  
+  // Selfie state
+  const [selfieUrl, setSelfieUrl] = useState<string>("");
   
   // Role change modal
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -16,6 +20,13 @@ export default function AccountPage() {
   const [roleReason, setRoleReason] = useState("");
   const [changingRole, setChangingRole] = useState(false);
   const [roleError, setRoleError] = useState("");
+
+  // Load selfie from user data
+  useEffect(() => {
+    if (userData && 'selfieUrl' in userData) {
+      setSelfieUrl((userData as any).selfieUrl || "");
+    }
+  }, [userData]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -144,68 +155,77 @@ export default function AccountPage() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             {activeTab === "profile" && (
-              <div className="bg-white rounded-lg shadow-md p-8">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="font-serif text-2xl font-bold text-navy">
-                    Profile Information
-                  </h2>
-                  <Link 
-                    href="/settings"
-                    className="px-4 py-2 bg-olive/10 text-olive rounded-lg hover:bg-olive/20 transition-colors font-medium"
-                  >
-                    ⚙️ Settings
-                  </Link>
+              <div className="space-y-6">
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="font-serif text-2xl font-bold text-navy">
+                      Profile Information
+                    </h2>
+                    <Link 
+                      href="/settings"
+                      className="px-4 py-2 bg-olive/10 text-olive rounded-lg hover:bg-olive/20 transition-colors font-medium"
+                    >
+                      ⚙️ Settings
+                    </Link>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-navy mb-2">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        value={user.displayName || ""}
+                        disabled
+                        className="w-full px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-navy mb-2">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        value={user.email || ""}
+                        disabled
+                        className="w-full px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-navy mb-2">
+                        Account Type
+                      </label>
+                      <input
+                        type="text"
+                        value={userData?.role === "seller" ? "Seller Account" : "Buyer Account"}
+                        disabled
+                        className="w-full px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-navy mb-2">
+                        Member Since
+                      </label>
+                      <input
+                        type="text"
+                        value={userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "N/A"}
+                        disabled
+                        className="w-full px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-navy mb-2">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      value={user.displayName || ""}
-                      disabled
-                      className="w-full px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-navy mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      value={user.email || ""}
-                      disabled
-                      className="w-full px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-navy mb-2">
-                      Account Type
-                    </label>
-                    <input
-                      type="text"
-                      value={userData?.role === "seller" ? "Seller Account" : "Buyer Account"}
-                      disabled
-                      className="w-full px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-navy mb-2">
-                      Member Since
-                    </label>
-                    <input
-                      type="text"
-                      value={userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "N/A"}
-                      disabled
-                      className="w-full px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
-                    />
-                  </div>
-                </div>
+                {/* Selfie Upload Section */}
+                <SelfieUpload 
+                  userId={user.uid}
+                  currentSelfie={selfieUrl}
+                  onSelfieUpdate={setSelfieUrl}
+                />
               </div>
             )}
 
@@ -217,17 +237,14 @@ export default function AccountPage() {
 
                 <div className="text-center py-12 bg-cream rounded-lg">
                   <div className="text-6xl mb-4">📦</div>
-                  <p className="text-navy/70 mb-2">
-                    You haven't placed any orders yet
-                  </p>
-                  <p className="text-sm text-navy/60 mb-6">
-                    Start exploring our authentic European delicacies!
+                  <p className="text-navy/70 mb-4">
+                    View your complete order history and leave reviews!
                   </p>
                   <Link
-                    href="/shop"
+                    href="/orders"
                     className="inline-block px-6 py-3 bg-terracotta text-white rounded-full hover:bg-terracotta/90 transition-colors font-medium"
                   >
-                    Browse Products
+                    📦 View All Orders
                   </Link>
                 </div>
               </div>

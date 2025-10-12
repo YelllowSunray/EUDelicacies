@@ -65,7 +65,18 @@ function OrderSuccessContent() {
                 <span className="flex-shrink-0 w-6 h-6 bg-terracotta/20 text-terracotta rounded-full flex items-center justify-center font-semibold text-xs">4</span>
                 <span>Track your order status and communicate with sellers through your account</span>
               </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 bg-terracotta/20 text-terracotta rounded-full flex items-center justify-center font-semibold text-xs">5</span>
+                <span><strong>Once delivered</strong>, please leave a review (out of 5 stars) to help other customers!</span>
+              </li>
             </ul>
+          </div>
+
+          <div className="bg-cream border-2 border-gold/30 rounded-lg p-5 mb-8">
+            <p className="text-sm text-navy font-medium mb-1">⭐ Love what you bought?</p>
+            <p className="text-xs text-navy/70">
+              After receiving your order, visit your Order History to leave a review and help other food lovers discover great products!
+            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

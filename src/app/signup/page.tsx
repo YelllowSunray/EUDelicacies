@@ -1,42 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+// Detect if device is mobile
+function isMobileDevice() {
+  if (typeof window === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
 
 export default function SignupPage() {
   const [role, setRole] = useState<UserRole>("buyer");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const [isMobile, setIsMobile] = useState(false);
+  const { signInWithGoogle, user } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+  }, []);
+
+  useEffect(() => {
+    // Redirect if already logged in
+    if (user) {
+      router.push("/");
+    }
+  }, [user, router]);
 
   const handleGoogleSignUp = async () => {
     setError("");
     setLoading(true);
 
     try {
-      await signInWithGoogle(role);
-      // Redirect based on role
-      if (role === "seller") {
-        router.push("/seller/dashboard");
-      } else {
-        router.push("/");
+      await signInWithGoogle(role, isMobile); // Pass mobile flag
+      
+      // For desktop popup, redirect immediately
+      // For mobile redirect, page will reload automatically
+      if (!isMobile) {
+        if (role === "seller") {
+          router.push("/seller/dashboard");
+        } else {
+          router.push("/");
+        }
       }
     } catch (error: any) {
       console.error("Google signup error:", error);
       if (error.code === "auth/popup-closed-by-user") {
         setError("Sign-up popup was closed. Please try again.");
       } else if (error.code === "auth/popup-blocked") {
-        setError("Pop-up was blocked by your browser. Please enable pop-ups and try again.");
+        setError("Pop-up blocked. Trying mobile-friendly method...");
+        // Try redirect as fallback
+        try {
+          await signInWithGoogle(role, true);
+        } catch (redirectError) {
+          setError("Failed to sign up. Please try again.");
+        }
       } else if (error.code === "auth/cancelled-popup-request") {
         // User cancelled, don't show error
         setError("");
       } else {
         setError("Failed to sign up with Google. Please try again.");
       }
-    } finally {
       setLoading(false);
     }
   };

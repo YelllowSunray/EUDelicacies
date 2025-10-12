@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface ProductCardProps {
   product: {
@@ -28,6 +30,22 @@ export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [userSelfie, setUserSelfie] = useState<string>("");
+  
+  // Load user's selfie
+  useEffect(() => {
+    const loadUserSelfie = async () => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserSelfie(userData.selfieUrl || "");
+        }
+      }
+    };
+    loadUserSelfie();
+  }, [user]);
+  
   // Category emoji fallback
   const getCategoryEmoji = (category: string) => {
     const emojiMap: { [key: string]: string } = {
@@ -89,25 +107,37 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
       )}
       
-      <Link href={`/products/${product.id}`} className="block">
-        {/* Product Image or Placeholder */}
-        <div className="relative h-48 bg-gradient-to-br from-olive/10 to-terracotta/10">
-          {product.imageUrl ? (
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-6xl">
-                {getCategoryEmoji(product.category)}
-              </div>
+          <Link href={`/products/${product.id}`} className="block">
+            {/* Product Image or Placeholder */}
+            <div className="relative h-48 bg-gradient-to-br from-olive/10 to-terracotta/10">
+              {product.imageUrl ? (
+                <Image
+                  src={product.imageUrl}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-6xl">
+                    {getCategoryEmoji(product.category)}
+                  </div>
+                </div>
+              )}
+              
+              {/* User Selfie Overlay */}
+              {userSelfie && (
+                <div className="absolute bottom-2 left-2 w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg z-10">
+                  <Image
+                    src={userSelfie}
+                    alt="You"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
         {/* Product Info */}
         <div className="p-5">

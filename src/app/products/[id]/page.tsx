@@ -8,6 +8,7 @@ import { getProductById } from "@/lib/products";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import type { SellerProduct } from "@/lib/products";
+import ProductReviews from "@/components/ProductReviews";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -227,6 +228,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               🚚 EU-wide shipping • 📦 Secure packaging • ✓ Satisfaction guaranteed
             </p>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-16 pt-8 border-t border-olive/20">
+          <ProductReviews productId={product.id!} />
         </div>
       </div>
     </div>

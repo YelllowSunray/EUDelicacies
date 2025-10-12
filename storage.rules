@@ -1,0 +1,37 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function: Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function: Check if user owns the resource
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Product images - sellers can upload/update/delete their own product images
+    match /products/{sellerId}/{productId}/{fileName} {
+      // Anyone can read product images
+      allow read: if true;
+      // Only authenticated sellers can upload their product images
+      allow write: if isOwner(sellerId);
+    }
+    
+    // User selfies - users can upload/update/delete their own selfies
+    match /users/{userId}/selfies/{fileName} {
+      // Anyone can read selfies (to display on product cards)
+      allow read: if true;
+      // Only the user can upload/update/delete their own selfie
+      allow write: if isOwner(userId);
+    }
+    
+    // Default: deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
