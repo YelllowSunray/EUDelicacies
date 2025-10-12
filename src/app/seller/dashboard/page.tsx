@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { getSellerProducts, deleteProduct, type SellerProduct } from "@/lib/products";
 import { getSellerOrders, getSellerOrderStats, updateOrderStatus } from "@/lib/firebase-orders";
 import { FirebaseOrder, OrderStatus } from "@/lib/firebase-collections";
@@ -166,45 +167,71 @@ export default function SellerDashboardPage() {
               ) : (
                 <div className="space-y-4">
                   {products.map((product) => (
-                    <div key={product.id} className="border border-olive/20 rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
+                    <div key={product.id} className="border-2 border-olive/20 rounded-lg p-4 hover:shadow-lg transition-all hover:border-olive/40">
+                      <div className="flex gap-4 items-start">
+                        {/* Product Image */}
+                        <div className="flex-shrink-0 w-24 h-24 bg-gradient-to-br from-olive/10 to-terracotta/10 rounded-lg overflow-hidden relative">
+                          {product.imageUrl ? (
+                            <Image
+                              src={product.imageUrl}
+                              alt={product.name}
+                              fill
+                              className="object-cover"
+                              sizes="96px"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-3xl">
+                              📦
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Product Info */}
+                        <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-navy text-lg mb-1">{product.name}</h3>
                           <p className="text-sm text-navy/60 mb-2">{product.category} • {product.country}</p>
-                          <p className="text-sm text-navy/70 line-clamp-2 mb-2">{product.description}</p>
+                          <p className="text-sm text-navy/70 line-clamp-2 mb-3">{product.description}</p>
                           <div className="flex gap-4 text-sm">
-                            <span className="text-terracotta font-semibold">€{product.price.toFixed(2)}</span>
-                            <span className="text-navy/60">Stock: {product.stock}</span>
+                            <span className="text-terracotta font-bold text-lg">€{product.price.toFixed(2)}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              product.stock > 10 ? 'bg-green-100 text-green-700' :
+                              product.stock > 0 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              Stock: {product.stock}
+                            </span>
                           </div>
                         </div>
-                        <div className="flex gap-2 ml-4">
+
+                        {/* Actions */}
+                        <div className="flex gap-2 flex-shrink-0">
                           <Link
                             href={`/seller/products/edit/${product.id}`}
-                            className="px-3 py-1 bg-olive/10 text-olive rounded hover:bg-olive/20 transition-colors text-sm"
+                            className="px-4 py-2 bg-olive/10 text-olive rounded-lg hover:bg-olive/20 transition-colors text-sm font-medium"
                           >
-                            Edit
+                            ✏️ Edit
                           </Link>
                           {deleteConfirm === product.id ? (
-                            <div className="flex gap-1">
+                            <div className="flex gap-2">
                               <button
                                 onClick={() => handleDeleteProduct(product.id!)}
-                                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
                               >
-                                Confirm
+                                ✓ Confirm
                               </button>
                               <button
                                 onClick={() => setDeleteConfirm(null)}
-                                className="px-3 py-1 bg-gray-200 text-navy rounded hover:bg-gray-300 transition-colors text-sm"
+                                className="px-4 py-2 bg-gray-200 text-navy rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
                               >
-                                Cancel
+                                ✕ Cancel
                               </button>
                             </div>
                           ) : (
                             <button
                               onClick={() => setDeleteConfirm(product.id!)}
-                              className="px-3 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors text-sm"
+                              className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
                             >
-                              Delete
+                              🗑️ Delete
                             </button>
                           )}
                         </div>
