@@ -154,188 +154,87 @@ export default function CheckoutPage() {
   const sendOrderEmails = async (orderId: string, orderNumber: string) => {
     console.log('📧 Sending order emails for order:', orderNumber);
     
-    // Prepare item list for emails
-    const itemsList = items.map(item => 
-      `${item.productName} x${item.quantity} - €${(item.price * item.quantity).toFixed(2)}`
-    ).join(', ');
-
-    // Get unique sellers
-    const uniqueSellers = new Map<string, { name: string; items: typeof items }>();
+    // Get unique sellers with their items
+    const uniqueSellers = new Map<string, { name: string; items: typeof items; total: number }>();
     items.forEach(item => {
       if (!uniqueSellers.has(item.sellerId)) {
-        uniqueSellers.set(item.sellerId, { name: item.sellerName, items: [] });
+        uniqueSellers.set(item.sellerId, { name: item.sellerName, items: [], total: 0 });
       }
-      uniqueSellers.get(item.sellerId)!.items.push(item);
+      const sellerData = uniqueSellers.get(item.sellerId)!;
+      sellerData.items.push(item);
+      sellerData.total += item.price * item.quantity;
     });
+
+    // Convert to array for email
+    const sellersArray = Array.from(uniqueSellers.values());
 
     // Send buyer confirmation email
     try {
       console.log('📧 Sending buyer confirmation to:', user?.email);
-      const buyerResponse = await fetch(process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT || "", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
+      const buyerResponse = await fetch('/api/send-order-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          _replyto: user?.email,
-          _subject: `✅ Order Confirmation #${orderNumber}`,
-          orderType: "buyer_confirmation",
-          orderNumber: orderNumber,
-          customerName: shippingAddress.fullName,
+          type: 'buyer_confirmation',
+          orderNumber,
           customerEmail: user?.email,
+          customerName: shippingAddress.fullName,
           orderTotal: `€${total.toFixed(2)}`,
-          items: itemsList,
-          message: `
-✅ ORDER CONFIRMATION
-
-Hello ${shippingAddress.fullName},
-
-Thank you for your order from EU Delicacies!
-
-📦 Order Details:
-━━━━━━━━━━━━━━━━━━━━━━
-Order Number: ${orderNumber}
-Order Date: ${new Date().toLocaleDateString('en-GB')}
-Total: €${total.toFixed(2)}
-
-Items:
-${itemsList}
-
-📍 Shipping Address:
-${shippingAddress.fullName}
-${shippingAddress.addressLine1}
-${shippingAddress.addressLine2 || ''}
-${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.postalCode}
-${shippingAddress.country}
-Phone: ${shippingAddress.phone}
-
-${notes ? `📝 Your Notes:\n${notes}\n` : ''}
-━━━━━━━━━━━━━━━━━━━━━━
-
-⏰ NEXT STEPS:
-The seller(s) will contact you within 24-48 hours via email or phone to:
-• Arrange payment details
-• Confirm delivery schedule
-• Answer any questions
-
-📱 Track Your Order:
-Visit ${typeof window !== 'undefined' ? window.location.origin : ''}/orders
-
-━━━━━━━━━━━━━━━━━━━━━━
-⭐ GET 10% OFF YOUR NEXT ORDER!
-━━━━━━━━━━━━━━━━━━━━━━
-
-Leave a review after receiving your order and get a 10% discount code!
-
-How to get your discount:
-1. Receive your order
-2. Go to My Orders page
-3. Click "⭐ Review" on any delivered item
-4. Write your review (text + 1-5 stars)
-5. Get your 10% discount code instantly!
-
-Your honest feedback helps other food lovers discover great products!
-
-Need help? Contact us at iyersamir@gmail.com
-
-Best regards,
-EU Delicacies Team
-          `
-        })
+          items: items.map(item => ({
+            productName: item.productName,
+            quantity: item.quantity,
+            subtotal: item.price * item.quantity,
+          })),
+          shippingAddress,
+          notes,
+        }),
       });
 
       if (buyerResponse.ok) {
         console.log('✅ Buyer email sent successfully');
       } else {
-        console.error('❌ Buyer email failed:', await buyerResponse.text());
+        const error = await buyerResponse.json();
+        console.error('❌ Buyer email failed:', error);
       }
     } catch (error) {
       console.error('❌ Error sending buyer email:', error);
     }
 
-    // Send seller notification (combined for all sellers)
+    // Send seller notification email
     try {
-      const sellersList = Array.from(uniqueSellers.entries()).map(([sellerId, sellerData]) => {
-        const sellerTotal = sellerData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const sellerItems = sellerData.items.map(item => 
-          `  • ${item.productName} x${item.quantity} = €${(item.price * item.quantity).toFixed(2)}`
-        ).join('\n');
-        return `
-━━━ ${sellerData.name} ━━━
-${sellerItems}
-Subtotal: €${sellerTotal.toFixed(2)}`;
-      }).join('\n\n');
-
       console.log('📧 Sending seller notification to: iyersamir@gmail.com');
-      const sellerResponse = await fetch(process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT || "", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
+      const sellerResponse = await fetch('/api/send-order-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          _subject: `🔔 NEW ORDER #${orderNumber} - Action Required`,
-          orderType: "seller_notification",
-          orderNumber: orderNumber,
-          sellerCount: uniqueSellers.size,
+          type: 'seller_notification',
+          orderNumber,
+          customerEmail: user?.email,
+          customerName: shippingAddress.fullName,
           orderTotal: `€${total.toFixed(2)}`,
-          message: `
-🎉 NEW ORDER RECEIVED!
-
-Order #${orderNumber}
-Date: ${new Date().toLocaleDateString('en-GB', { 
-  day: 'numeric', 
-  month: 'long', 
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit'
-})}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-👤 CUSTOMER INFORMATION:
-Name: ${shippingAddress.fullName}
-Email: ${user?.email}
-Phone: ${shippingAddress.phone}
-
-📍 SHIPPING ADDRESS:
-${shippingAddress.addressLine1}
-${shippingAddress.addressLine2 ? shippingAddress.addressLine2 + '\n' : ''}${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.postalCode}
-${shippingAddress.country}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📦 ITEMS BY SELLER:
-${sellersList}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💰 GRAND TOTAL: €${total.toFixed(2)}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-${notes ? `📝 CUSTOMER NOTES:\n${notes}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` : ''}
-
-⚠️ ACTION REQUIRED:
-1. Contact the customer within 24-48 hours
-2. Arrange payment method (bank transfer, PayPal, etc.)
-3. Confirm delivery schedule
-4. Update order status in your dashboard
-
-📱 View Order Details:
-${typeof window !== 'undefined' ? window.location.origin : ''}/seller/dashboard
-
-💡 TIP: Reply directly to the customer at ${user?.email}
-
-Best regards,
-EU Delicacies Platform
-          `
-        })
+          sellers: sellersArray.map(seller => ({
+            name: seller.name,
+            total: seller.total,
+            items: seller.items.map(item => ({
+              productName: item.productName,
+              quantity: item.quantity,
+              subtotal: item.price * item.quantity,
+            })),
+          })),
+          shippingAddress,
+          notes,
+        }),
       });
 
       if (sellerResponse.ok) {
         console.log('✅ Seller email sent successfully');
       } else {
-        console.error('❌ Seller email failed:', await sellerResponse.text());
+        const error = await sellerResponse.json();
+        console.error('❌ Seller email failed:', error);
       }
     } catch (error) {
       console.error('❌ Error sending seller email:', error);
