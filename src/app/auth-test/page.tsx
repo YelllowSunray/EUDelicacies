@@ -71,15 +71,10 @@ export default function AuthTestPage() {
     addLog(`🗑️ Cleared all localStorage`);
   };
 
-  const testGoogleSignIn = async () => {
-    addLog(`🔐 Starting Google Sign-In test...`);
-    try {
-      const { signInWithGoogle } = await import('@/contexts/AuthContext');
-      // This won't work directly, need to use the hook
-      addLog(`⚠️ Use the actual login page to test Google Sign-In`);
-    } catch (error: any) {
-      addLog(`❌ Error: ${error.message}`);
-    }
+  const simulateLogin = () => {
+    addLog(`🔐 Simulating login flow...`);
+    addLog(`⚠️ To test actual Google Sign-In, use the "Go to Login" button below`);
+    addLog(`📍 This page is for monitoring auth state only`);
   };
 
   return (
