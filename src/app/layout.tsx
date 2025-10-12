@@ -3,6 +3,7 @@ import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AuthDebugBanner from "@/components/AuthDebugBanner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 
@@ -34,6 +35,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <CartProvider>
+            <AuthDebugBanner />
             <Navbar />
             {children}
             <Footer />
