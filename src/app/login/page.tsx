@@ -11,6 +11,15 @@ function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
+// Detect Safari specifically (iOS Safari has issues with redirects)
+function isSafari() {
+  if (typeof window === 'undefined') return false;
+  const ua = navigator.userAgent;
+  const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  return isSafariBrowser || isIOS;
+}
+
 export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +29,11 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    setIsMobile(isMobileDevice());
+    const mobile = isMobileDevice();
+    const safari = isSafari();
+    setIsMobile(mobile);
+    
+    console.log('📱 Device detection:', { mobile, safari, userAgent: navigator.userAgent });
     
     // Check URL params for return URL (in case it was passed via query string)
     const urlParams = new URLSearchParams(window.location.search);
@@ -32,20 +45,31 @@ export default function LoginPage() {
     
     // Check if coming back from Google redirect
     const mode = urlParams.get('mode');
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
     const pendingRole = localStorage.getItem('pendingGoogleRole');
     
-    if (pendingRole || mode === 'select_account') {
+    console.log('🔍 URL params:', { mode, hasCode: !!code, hasState: !!state, pendingRole });
+    
+    if (pendingRole || mode === 'select_account' || code || state) {
       console.log('🔄 Detected redirect from Google, waiting for auth...');
       setCheckingRedirect(true);
       setLoading(true);
       
-      // Set a timeout in case auth doesn't complete
+      // Set a longer timeout for mobile Safari
+      const timeout = safari ? 10000 : 5000;
       setTimeout(() => {
+        console.log('⏰ Timeout reached, stopping loading state');
         setCheckingRedirect(false);
         setLoading(false);
-      }, 5000);
+        
+        // If still not logged in, show error
+        if (!user) {
+          setError('Login timeout. Please try again. If this persists, try using a different browser.');
+        }
+      }, timeout);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     // Redirect if already logged in

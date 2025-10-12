@@ -59,20 +59,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     console.log('🔄 AuthContext: Setting up auth');
+    let redirectCheckCompleted = false;
     
     // Check for redirect result FIRST
     const checkRedirect = async () => {
+      if (redirectCheckCompleted) return;
+      
       try {
         console.log('🔍 Checking redirect result...');
+        console.log('🌐 Current URL:', window.location.href);
+        
         const result = await getRedirectResult(auth);
+        redirectCheckCompleted = true;
         
         if (result && result.user) {
-          console.log('✅ Redirect success:', result.user.email);
+          console.log('✅ Redirect success! User:', result.user.email);
+          console.log('👤 User UID:', result.user.uid);
+          console.log('📧 User email:', result.user.email);
+          console.log('👥 Display name:', result.user.displayName);
+          
+          // Check redirect timestamp (for debugging)
+          const redirectTimestamp = sessionStorage.getItem('redirectTimestamp');
+          if (redirectTimestamp) {
+            const elapsed = Date.now() - parseInt(redirectTimestamp);
+            console.log(`⏱️ Redirect completed in ${elapsed}ms`);
+            sessionStorage.removeItem('redirectTimestamp');
+          }
+          
           const userRef = doc(db, 'users', result.user.uid);
           const userSnap = await getDoc(userRef);
           
           if (!userSnap.exists()) {
-            const pendingRole = localStorage.getItem('pendingGoogleRole') as UserRole || 'buyer';
+            // Try both localStorage and sessionStorage (Safari sometimes clears localStorage)
+            let pendingRole = localStorage.getItem('pendingGoogleRole') as UserRole;
+            if (!pendingRole) {
+              pendingRole = sessionStorage.getItem('pendingGoogleRole') as UserRole;
+              console.log('⚠️ Got role from sessionStorage instead of localStorage');
+            }
+            pendingRole = pendingRole || 'buyer';
+            console.log('📝 Creating new user with role:', pendingRole);
+            
             const newUser: UserData = {
               uid: result.user.uid,
               email: result.user.email!,
@@ -80,18 +106,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: pendingRole,
               createdAt: new Date().toISOString(),
             };
+            
             await setDoc(userRef, newUser);
-            console.log('✅ User created');
+            console.log('✅ User document created successfully');
+          } else {
+            console.log('✅ User document already exists');
           }
+          
+          // Clear from both storages
           localStorage.removeItem('pendingGoogleRole');
+          sessionStorage.removeItem('pendingGoogleRole');
+          console.log('🧹 Cleared pendingGoogleRole from both storages');
         } else {
-          console.log('ℹ️ No redirect result');
+          console.log('ℹ️ No redirect result found (user may have cancelled or this is not a redirect)');
+          
+          // Check if we expected a redirect
+          const redirectTimestamp = sessionStorage.getItem('redirectTimestamp');
+          if (redirectTimestamp) {
+            const elapsed = Date.now() - parseInt(redirectTimestamp);
+            console.log(`⚠️ Expected redirect but got none. Time since redirect: ${elapsed}ms`);
+            if (elapsed > 60000) {
+              // More than 1 minute - probably user cancelled
+              sessionStorage.removeItem('redirectTimestamp');
+              localStorage.removeItem('pendingGoogleRole');
+              sessionStorage.removeItem('pendingGoogleRole');
+            }
+          }
         }
       } catch (error: any) {
-        console.error('❌ Redirect error:', error.code, error.message);
+        redirectCheckCompleted = true;
+        console.error('❌ Redirect error!');
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Full error:', error);
+        
+        // Clear pending role on error
+        localStorage.removeItem('pendingGoogleRole');
       }
     };
     
+    // Run redirect check immediately
     checkRedirect();
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -177,8 +231,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Use redirect for mobile devices
       if (useMobile) {
         console.log('📱 Using redirect-based Google sign-in for mobile');
+        console.log('💾 Storing role:', role);
+        console.log('🌐 Current URL before redirect:', window.location.href);
+        
+        // Store in both localStorage and sessionStorage for Safari
         localStorage.setItem('pendingGoogleRole', role);
-        await signInWithRedirect(auth, provider);
+        sessionStorage.setItem('pendingGoogleRole', role);
+        
+        // Verify it was stored
+        const storedLocal = localStorage.getItem('pendingGoogleRole');
+        const storedSession = sessionStorage.getItem('pendingGoogleRole');
+        console.log('✅ Verified stored role - localStorage:', storedLocal, 'sessionStorage:', storedSession);
+        
+        // Add a timestamp to detect if redirect completes
+        sessionStorage.setItem('redirectTimestamp', Date.now().toString());
+        
+        console.log('🚀 Starting redirect to Google...');
+        
+        try {
+          await signInWithRedirect(auth, provider);
+          console.log('⏳ Redirect initiated (you should not see this if redirect worked)');
+        } catch (redirectError: any) {
+          console.error('❌ Redirect failed:', redirectError.code, redirectError.message);
+          throw redirectError;
+        }
+        
         // Function returns here, redirect happens, user comes back
         return;
       }

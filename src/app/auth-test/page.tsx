@@ -64,6 +64,22 @@ export default function AuthTestPage() {
     addLog(`Auth instance: ${auth ? 'exists' : 'null'}`);
     addLog(`Current user: ${auth.currentUser?.email || 'null'}`);
     addLog(`App name: ${auth.app.name}`);
+    
+    // Check current domain
+    addLog(`🌐 Current domain: ${window.location.hostname}`);
+    addLog(`🔗 Full URL: ${window.location.href}`);
+    addLog(`📱 Protocol: ${window.location.protocol}`);
+    
+    // Check if this domain is likely authorized
+    const domain = window.location.hostname;
+    if (domain === 'localhost') {
+      addLog(`✅ Running on localhost (should be authorized by default)`);
+    } else if (domain.includes('vercel.app')) {
+      addLog(`⚠️ Running on Vercel - make sure ${domain} is in Firebase authorized domains`);
+    } else {
+      addLog(`⚠️ Running on custom domain: ${domain}`);
+      addLog(`📋 Add this to Firebase Console → Authentication → Settings → Authorized domains`);
+    }
   };
 
   const clearAllStorage = () => {
@@ -89,12 +105,14 @@ export default function AuthTestPage() {
           <div className="mb-6 p-4 bg-blue-50 rounded-lg">
             <h2 className="font-semibold text-navy mb-2">Current State:</h2>
             <div className="space-y-1 text-sm">
-              <p><strong>User:</strong> {user ? `${user.email} (${user.uid})` : 'Not logged in'}</p>
+              <p><strong>User:</strong> {user ? `${user.email} (${user.uid.substring(0, 8)}...)` : 'Not logged in'}</p>
               <p><strong>Role:</strong> {userData?.role || 'N/A'}</p>
               <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
               <p><strong>Pending Role:</strong> {typeof window !== 'undefined' ? localStorage.getItem('pendingGoogleRole') || 'None' : 'N/A'}</p>
               <p><strong>Return URL:</strong> {typeof window !== 'undefined' ? localStorage.getItem('returnUrl') || 'None' : 'N/A'}</p>
               <p><strong>Redirect Result:</strong> {redirectResult ? `Yes (${redirectResult.user?.email})` : 'No'}</p>
+              <p><strong>Current Domain:</strong> {typeof window !== 'undefined' ? window.location.hostname : 'N/A'}</p>
+              <p><strong>Current URL:</strong> {typeof window !== 'undefined' ? window.location.href : 'N/A'}</p>
             </div>
           </div>
 
