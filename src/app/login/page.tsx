@@ -22,8 +22,15 @@ export default function LoginPage() {
   useEffect(() => {
     setIsMobile(isMobileDevice());
     
-    // Check if coming back from Google redirect
+    // Check URL params for return URL (in case it was passed via query string)
     const urlParams = new URLSearchParams(window.location.search);
+    const returnUrl = urlParams.get('returnUrl');
+    if (returnUrl) {
+      console.log('📍 Storing return URL:', returnUrl);
+      localStorage.setItem('returnUrl', returnUrl);
+    }
+    
+    // Check if coming back from Google redirect
     const mode = urlParams.get('mode');
     const pendingRole = localStorage.getItem('pendingGoogleRole');
     
@@ -44,7 +51,16 @@ export default function LoginPage() {
     // Redirect if already logged in
     if (user) {
       console.log('✅ User logged in, redirecting...');
-      router.push("/");
+      
+      // Check if there's a return URL
+      const returnUrl = localStorage.getItem('returnUrl');
+      if (returnUrl) {
+        console.log('📍 Redirecting to:', returnUrl);
+        localStorage.removeItem('returnUrl');
+        router.push(returnUrl);
+      } else {
+        router.push("/");
+      }
     } else if (checkingRedirect && !loading) {
       // If we were checking for redirect but no user appeared, stop loading
       setCheckingRedirect(false);
@@ -111,6 +127,13 @@ export default function LoginPage() {
           <p className="text-navy/70">
             Sign in to your EU Delicacies account
           </p>
+          {typeof window !== 'undefined' && localStorage.getItem('returnUrl') && (
+            <div className="mt-4 inline-block bg-terracotta/10 border border-terracotta/30 px-4 py-2 rounded-full">
+              <p className="text-sm text-terracotta font-medium">
+                🔐 Sign in to continue shopping
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-8">

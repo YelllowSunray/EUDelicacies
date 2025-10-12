@@ -77,7 +77,9 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.stopPropagation();
     
     if (!user) {
-      // Redirect to login page
+      // Store current page as return URL before redirecting to login
+      const currentUrl = window.location.pathname + window.location.search;
+      localStorage.setItem('returnUrl', currentUrl);
       router.push('/login');
       return;
     }

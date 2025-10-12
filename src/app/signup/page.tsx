@@ -26,7 +26,15 @@ export default function SignupPage() {
   useEffect(() => {
     // Redirect if already logged in
     if (user) {
-      router.push("/");
+      // Check if there's a return URL
+      const returnUrl = localStorage.getItem('returnUrl');
+      if (returnUrl) {
+        console.log('📍 Redirecting to:', returnUrl);
+        localStorage.removeItem('returnUrl');
+        router.push(returnUrl);
+      } else {
+        router.push("/");
+      }
     }
   }, [user, router]);
 

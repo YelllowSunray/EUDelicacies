@@ -30,6 +30,8 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!loading && !user) {
+      // Store account URL as return URL
+      localStorage.setItem('returnUrl', '/account');
       router.push("/login");
     }
   }, [user, loading, router]);
