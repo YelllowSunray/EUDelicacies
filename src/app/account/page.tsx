@@ -165,7 +165,7 @@ export default function AccountPage() {
                     </h2>
                     <Link 
                       href="/settings"
-                      className="px-4 py-2 bg-olive/10 text-olive rounded-lg hover:bg-olive/20 transition-colors font-medium"
+                      className="px-6 py-3 bg-olive text-white rounded-full hover:bg-olive/90 transition-all font-semibold shadow-md hover:shadow-lg transform hover:scale-105 text-base"
                     >
                       ⚙️ Settings
                     </Link>

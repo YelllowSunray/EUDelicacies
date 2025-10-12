@@ -181,12 +181,16 @@ export async function getSellerOrderStats(sellerId: string): Promise<{
 }> {
   const orders = await getSellerOrders(sellerId);
   
+  // Only count revenue from delivered orders (not cancelled/refunded)
   let totalRevenue = 0;
   orders.forEach(order => {
-    const sellerItems = order.items.filter(item => item.sellerId === sellerId);
-    sellerItems.forEach(item => {
-      totalRevenue += item.subtotal;
-    });
+    // Only count delivered orders for revenue
+    if (order.status === 'delivered') {
+      const sellerItems = order.items.filter(item => item.sellerId === sellerId);
+      sellerItems.forEach(item => {
+        totalRevenue += item.subtotal;
+      });
+    }
   });
   
   return {

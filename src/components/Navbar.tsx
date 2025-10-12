@@ -121,6 +121,13 @@ export default function Navbar() {
                       >
                         My Account
                       </Link>
+                      <Link
+                        href="/settings"
+                        className="block px-4 py-2 text-sm text-navy hover:bg-cream transition-colors"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        ⚙️ Settings
+                      </Link>
                       {userData?.role === "seller" && (
                         <Link
                           href="/seller/dashboard"
