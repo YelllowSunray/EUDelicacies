@@ -3,16 +3,21 @@
 import { useState, useEffect } from "react";
 import HeroSection from "@/components/HeroSection";
 import CountryCard from "@/components/CountryCard";
+import ProductCard from "@/components/ProductCard";
 import { getAllCountries } from "@/lib/firebase-countries";
+import { getAllProducts, type SellerProduct } from "@/lib/products";
 import { FirebaseCountry } from "@/lib/firebase-collections";
 import Link from "next/link";
 
 export default function Home() {
   const [countries, setCountries] = useState<FirebaseCountry[]>([]);
+  const [recentProducts, setRecentProducts] = useState<SellerProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   useEffect(() => {
     loadCountries();
+    loadRecentProducts();
   }, []);
 
   const loadCountries = async () => {
@@ -23,9 +28,56 @@ export default function Home() {
     setLoading(false);
   };
 
+  const loadRecentProducts = async () => {
+    setLoadingProducts(true);
+    const products = await getAllProducts(8); // Get 8 most recent products
+    setRecentProducts(products);
+    setLoadingProducts(false);
+  };
+
   return (
     <div>
       <HeroSection />
+      
+      {/* Recently Added Products Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center mb-12">
+          <h2 className="font-serif text-4xl font-bold text-navy mb-4">
+            Recently Added Products
+          </h2>
+          <p className="text-lg text-navy/70 max-w-2xl mx-auto">
+            Discover the latest artisan delicacies from across Europe, freshly added by our trusted sellers.
+          </p>
+        </div>
+        
+        {loadingProducts ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📦</div>
+            <p className="text-navy/70">Loading products...</p>
+          </div>
+        ) : recentProducts.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recentProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+            <div className="text-center mt-12">
+              <Link
+                href="/shop"
+                className="inline-block px-8 py-3 bg-terracotta text-white rounded-full hover:bg-terracotta/90 transition-colors font-semibold"
+              >
+                Browse All Products →
+              </Link>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-12 bg-cream rounded-lg">
+            <div className="text-6xl mb-4">📦</div>
+            <p className="text-navy/70">No products available yet.</p>
+          </div>
+        )}
+      </section>
       
       {/* Featured Countries Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">

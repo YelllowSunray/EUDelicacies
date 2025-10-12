@@ -13,12 +13,7 @@ export default function AdminSeedPage() {
   const [status, setStatus] = useState<string[]>([]);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    // Only allow authenticated users (you can add admin check later)
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
+  // Remove auth redirect - anyone can view the page, but seeding requires login
 
   const addStatus = (message: string) => {
     setStatus(prev => [...prev, message]);
@@ -59,10 +54,6 @@ export default function AdminSeedPage() {
         <p className="text-navy">Loading...</p>
       </div>
     );
-  }
-
-  if (!user) {
-    return null;
   }
 
   return (

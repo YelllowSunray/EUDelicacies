@@ -84,6 +84,13 @@ export default function CheckoutPage() {
     setError("");
 
     try {
+      // Ensure user exists
+      if (!user) {
+        setError("You must be logged in to place an order.");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Convert cart items to order items
       const orderItems: OrderItem[] = items.map(item => ({
         productId: item.productId,

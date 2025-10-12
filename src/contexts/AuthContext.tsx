@@ -7,7 +7,9 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -28,6 +30,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, displayName: string, role: UserRole) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: (role?: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   upgradeToSeller: () => Promise<void>;
   downgradeToBuyer: () => Promise<void>;
@@ -39,6 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signUp: async () => {},
   signIn: async () => {},
+  signInWithGoogle: async () => {},
   logout: async () => {},
   upgradeToSeller: async () => {},
   downgradeToBuyer: async () => {},
@@ -95,6 +99,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
+  const signInWithGoogle = async (role: UserRole = 'buyer') => {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    
+    // Check if user document exists, if not create one
+    const userRef = doc(db, 'users', result.user.uid);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      // Create new user document for Google sign-in
+      const newUser: UserData = {
+        uid: result.user.uid,
+        email: result.user.email!,
+        displayName: result.user.displayName || 'User',
+        role: role,
+        createdAt: new Date().toISOString(),
+      };
+      
+      await setDoc(userRef, newUser);
+      setUserData(newUser);
+    }
+  };
+
   const logout = async () => {
     await signOut(auth);
     setUserData(null);
@@ -140,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     logout,
     upgradeToSeller,
     downgradeToBuyer,

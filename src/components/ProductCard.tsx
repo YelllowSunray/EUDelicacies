@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -24,6 +25,7 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
   const { user } = useAuth();
+  const router = useRouter();
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   // Category emoji fallback
@@ -47,7 +49,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.stopPropagation();
     
     if (!user) {
-      alert('Please login to add items to cart');
+      // Redirect to login page
+      router.push('/login');
       return;
     }
 
@@ -133,16 +136,23 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
       </Link>
       
-      {/* Add to Cart Button */}
-      <div className="px-5 pb-5">
-        <button
-          onClick={handleAddToCart}
-          disabled={isAdding || product.stock <= 0}
-          className="w-full py-2.5 bg-terracotta text-white rounded-lg hover:bg-terracotta/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isAdding ? "Adding..." : product.stock <= 0 ? "Out of Stock" : "Add to Cart 🛒"}
-        </button>
-      </div>
+          {/* Add to Cart Button */}
+          <div className="px-5 pb-5">
+            <button
+              onClick={handleAddToCart}
+              disabled={isAdding || product.stock <= 0}
+              className="w-full py-2.5 bg-terracotta text-white rounded-lg hover:bg-terracotta/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isAdding 
+                ? "Adding..." 
+                : product.stock <= 0 
+                ? "Out of Stock" 
+                : !user 
+                ? "Login to Buy 🔒" 
+                : "Add to Cart 🛒"
+              }
+            </button>
+          </div>
     </div>
   );
 }
