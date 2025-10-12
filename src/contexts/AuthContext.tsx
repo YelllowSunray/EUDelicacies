@@ -59,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     console.log('🔄 AuthContext: Setting up auth');
+    console.log('🕐 Current time:', new Date().toISOString());
     let redirectCheckCompleted = false;
     
     // Check for redirect result FIRST
@@ -68,8 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         console.log('🔍 Checking redirect result...');
         console.log('🌐 Current URL:', window.location.href);
+        console.log('👤 Current auth user (before getRedirectResult):', auth.currentUser?.email || 'none');
         
+        const startTime = Date.now();
         const result = await getRedirectResult(auth);
+        const elapsed = Date.now() - startTime;
+        console.log(`⏱️ getRedirectResult took ${elapsed}ms`);
+        
         redirectCheckCompleted = true;
         
         if (result && result.user) {
@@ -119,6 +125,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('🧹 Cleared pendingGoogleRole from both storages');
         } else {
           console.log('ℹ️ No redirect result found (user may have cancelled or this is not a redirect)');
+          
+          // FALLBACK: Check if user is already logged in (sometimes Safari doesn't return redirect result)
+          if (auth.currentUser) {
+            console.log('⚠️ No redirect result BUT user is logged in:', auth.currentUser.email);
+            console.log('🔄 Attempting to create user document as fallback...');
+            
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            
+            if (!userSnap.exists()) {
+              let pendingRole = localStorage.getItem('pendingGoogleRole') as UserRole;
+              if (!pendingRole) {
+                pendingRole = sessionStorage.getItem('pendingGoogleRole') as UserRole;
+              }
+              pendingRole = pendingRole || 'buyer';
+              
+              const newUser: UserData = {
+                uid: auth.currentUser.uid,
+                email: auth.currentUser.email!,
+                displayName: auth.currentUser.displayName || 'User',
+                role: pendingRole,
+                createdAt: new Date().toISOString(),
+              };
+              
+              await setDoc(userRef, newUser);
+              console.log('✅ User document created via fallback');
+            }
+            
+            // Clear storages
+            localStorage.removeItem('pendingGoogleRole');
+            sessionStorage.removeItem('pendingGoogleRole');
+            sessionStorage.removeItem('redirectTimestamp');
+          }
           
           // Check if we expected a redirect
           const redirectTimestamp = sessionStorage.getItem('redirectTimestamp');

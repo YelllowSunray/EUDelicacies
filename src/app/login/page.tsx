@@ -56,16 +56,28 @@ export default function LoginPage() {
       setCheckingRedirect(true);
       setLoading(true);
       
-      // Set a longer timeout for mobile Safari
-      const timeout = safari ? 10000 : 5000;
+      // Set a much longer timeout for mobile Safari (it can be slow)
+      const timeout = safari ? 20000 : 10000;
+      const checkInterval = setInterval(() => {
+        // Check if auth completed
+        if (user) {
+          console.log('✅ User detected during interval check');
+          clearInterval(checkInterval);
+          setCheckingRedirect(false);
+          setLoading(false);
+        }
+      }, 500);
+      
       setTimeout(() => {
         console.log('⏰ Timeout reached, stopping loading state');
+        clearInterval(checkInterval);
         setCheckingRedirect(false);
         setLoading(false);
         
-        // If still not logged in, show error
+        // If still not logged in after long timeout, show error
         if (!user) {
-          setError('Login timeout. Please try again. If this persists, try using a different browser.');
+          console.error('❌ Login timeout - user not detected after', timeout, 'ms');
+          setError('Login is taking longer than expected. Please wait a moment and refresh the page, or try again.');
         }
       }, timeout);
     }
@@ -165,10 +177,18 @@ export default function LoginPage() {
             <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6">
               <div className="flex items-center gap-3">
                 <div className="animate-spin text-2xl">⏳</div>
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold">Completing sign-in...</p>
-                  <p className="text-sm">Please wait while we log you in</p>
+                  <p className="text-sm">Please wait while we log you in (this may take 10-20 seconds on mobile)</p>
                 </div>
+              </div>
+              <div className="mt-3">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  Taking too long? Click to refresh
+                </button>
               </div>
             </div>
           )}
