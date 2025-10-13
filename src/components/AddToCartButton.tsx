@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import type { SellerProduct } from "@/lib/products";
+import type { CartItem } from "@/lib/firebase-collections";
 
 interface AddToCartButtonProps {
   product: SellerProduct;
@@ -27,7 +28,19 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
 
     setIsAdding(true);
     try {
-      await addToCart(product);
+      // Transform product to CartItem format
+      const cartItem: CartItem = {
+        productId: product.id,
+        productName: product.name,
+        productImage: product.imageUrl,
+        price: product.price,
+        quantity: 1, // Default quantity
+        sellerId: product.sellerId,
+        sellerName: product.sellerName,
+        stock: product.stock,
+      };
+      
+      await addToCart(cartItem);
       // Optional: Show success message or animation
     } catch (error) {
       console.error('Error adding to cart:', error);
