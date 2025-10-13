@@ -200,12 +200,40 @@ export default function AccountPage() {
                       <label className="block text-sm font-medium text-navy mb-2">
                         Account Type
                       </label>
-                      <input
-                        type="text"
-                        value={userData?.role === "seller" ? "Seller Account" : "Buyer Account"}
-                        disabled
-                        className="w-full px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
-                      />
+                      <div className="flex items-center gap-3 mb-4">
+                        <input
+                          type="text"
+                          value={userData?.role === "seller" ? "Seller Account" : "Buyer Account"}
+                          disabled
+                          className="flex-1 px-4 py-3 border border-olive/30 rounded-lg bg-cream/50"
+                        />
+                        {userData?.role === "buyer" ? (
+                          <button
+                            onClick={() => {
+                              setRoleChangeType("upgrade");
+                              setShowRoleModal(true);
+                            }}
+                            className="px-6 py-3 bg-gold/20 text-navy rounded-lg hover:bg-gold/30 transition-colors font-medium border border-gold/40"
+                          >
+                            🏪 Upgrade to Seller
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setRoleChangeType("downgrade");
+                              setShowRoleModal(true);
+                            }}
+                            className="px-6 py-3 bg-blue-50 text-navy rounded-lg hover:bg-blue-100 transition-colors font-medium border border-blue-200"
+                          >
+                            🛍️ Switch to Buyer
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-sm text-navy/60">
+                        {userData?.role === "seller" 
+                          ? "Switch back to a buyer account if you no longer want to sell products."
+                          : "Upgrade to a seller account to start selling your authentic European products."}
+                      </p>
                     </div>
 
                     <div>

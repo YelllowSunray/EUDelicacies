@@ -72,7 +72,7 @@ export default function Navbar() {
                 href="/seller/dashboard" 
                 className="text-navy hover:text-terracotta transition-colors font-medium"
               >
-                Dashboard
+                Seller Dashboard
               </Link>
             )}
             {user ? (
@@ -212,7 +212,7 @@ export default function Navbar() {
                   className="text-navy hover:text-terracotta transition-colors font-medium py-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Dashboard
+                  Seller Dashboard
                 </Link>
               )}
               <Link 
