@@ -3,7 +3,7 @@ import { getAllCountries } from '@/lib/firebase-countries';
 import { getAllProducts } from '@/lib/products';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://eudelicacies.com'; // Update with your actual domain
+  const baseUrl = 'https://www.delicacies.eu';
   
   try {
     // Get dynamic data
@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: baseUrl,
         lastModified: new Date(),
         changeFrequency: 'daily',
-        priority: 1,
+        priority: 1.0,
       },
       {
         url: `${baseUrl}/shop`,
@@ -33,6 +33,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       },
       {
+        url: `${baseUrl}/faq`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly',
+        priority: 0.7,
+      },
+      {
         url: `${baseUrl}/about`,
         lastModified: new Date(),
         changeFrequency: 'monthly',
@@ -42,18 +48,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${baseUrl}/contact`,
         lastModified: new Date(),
         changeFrequency: 'monthly',
-        priority: 0.5,
+        priority: 0.6,
       },
       {
         url: `${baseUrl}/login`,
         lastModified: new Date(),
-        changeFrequency: 'monthly',
+        changeFrequency: 'yearly',
         priority: 0.3,
       },
       {
         url: `${baseUrl}/signup`,
         lastModified: new Date(),
-        changeFrequency: 'monthly',
+        changeFrequency: 'yearly',
         priority: 0.3,
       },
     ];

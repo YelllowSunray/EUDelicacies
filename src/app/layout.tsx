@@ -22,13 +22,29 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = generateSEOMetadata({
-  title: "EU Delicacies - Taste the Heart of Europe",
-  description: "Discover authentic European delicacies from local producers across 29 countries. Premium wines, artisan cheeses, traditional preserves, and gourmet specialties delivered fresh to your door.",
-  keywords: SEO_KEYWORDS.homepage,
-  type: 'website',
-  url: '/',
-});
+export const metadata: Metadata = {
+  ...generateSEOMetadata({
+    title: "EU Delicacies - Taste the Heart of Europe",
+    description: "Discover authentic European delicacies from local producers across 29 countries. Premium wines, artisan cheeses, traditional preserves, and gourmet specialties delivered fresh to your door.",
+    keywords: SEO_KEYWORDS.homepage,
+    type: 'website',
+    url: '/',
+  }),
+  // Additional meta tags for better SEO
+  verification: {
+    google: 'your-google-verification-code', // Add your Google Search Console verification code
+    // yandex: 'your-yandex-verification-code',
+    // bing: 'your-bing-verification-code',
+  },
+  category: 'food',
+  classification: 'E-commerce',
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
+    'apple-mobile-web-app-title': 'EU Delicacies',
+  },
+};
 
 export default function RootLayout({
   children,

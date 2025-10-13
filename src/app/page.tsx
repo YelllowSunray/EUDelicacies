@@ -55,7 +55,7 @@ export default async function Home() {
     '@type': 'WebPage',
     name: 'EU Delicacies - European Food Marketplace',
     description: 'Discover authentic European delicacies from local producers across 29+ countries',
-    url: 'https://eudelicacies.com',
+    url: 'https://www.delicacies.eu',
     mainEntity: {
       '@type': 'ItemList',
       name: 'Featured European Countries',
@@ -67,7 +67,7 @@ export default async function Home() {
           '@type': 'Place',
           name: country.name,
           description: `Authentic ${country.name} delicacies and specialties`,
-          url: `https://eudelicacies.com/countries/${country.id}`,
+          url: `https://www.delicacies.eu/countries/${country.id}`,
         },
       })),
     },

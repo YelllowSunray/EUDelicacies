@@ -16,9 +16,11 @@ export interface SEOConfig {
 
 const defaultConfig = {
   siteName: 'EU Delicacies',
-  siteUrl: 'https://eudelicacies.com', // Update with your actual domain
-  defaultImage: '/og-image.jpg', // We'll create this
-  twitterHandle: '@eudelicacies', // Update with your Twitter handle
+  siteUrl: 'https://www.delicacies.eu',
+  defaultImage: '/og-image.jpg',
+  twitterHandle: '@eudelicacies',
+  contactEmail: 'eudelicacies@gmail.com',
+  foundingDate: '2024',
 };
 
 export function generateMetadata(config: SEOConfig): Metadata {
@@ -51,6 +53,11 @@ export function generateMetadata(config: SEOConfig): Metadata {
       telephone: false,
     },
     metadataBase: new URL(defaultConfig.siteUrl),
+    referrer: 'origin-when-cross-origin',
+    themeColor: [
+      { media: '(prefers-color-scheme: light)', color: '#2C3E50' },
+      { media: '(prefers-color-scheme: dark)', color: '#1a1a1a' },
+    ],
     alternates: {
       canonical: fullUrl,
     },
@@ -153,26 +160,9 @@ export function generateBreadcrumbStructuredData(breadcrumbs: Array<{ name: stri
   };
 }
 
+// Legacy function for backward compatibility
 export function generateOrganizationStructuredData() {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'EU Delicacies',
-    url: defaultConfig.siteUrl,
-    logo: `${defaultConfig.siteUrl}/logo.png`,
-    description: 'Authentic European delicacies and gourmet foods from local producers across Europe.',
-    sameAs: [
-      // Add your social media URLs here
-      'https://facebook.com/eudelicacies',
-      'https://instagram.com/eudelicacies',
-      'https://twitter.com/eudelicacies',
-    ],
-    contactPoint: {
-      '@type': 'ContactPoint',
-      contactType: 'Customer Service',
-      email: 'support@eudelicacies.com',
-    },
-  };
+  return generateEnhancedOrganizationStructuredData();
 }
 
 export function generateWebsiteStructuredData() {
@@ -201,6 +191,14 @@ export const SEO_KEYWORDS = {
     'artisan food europe',
     'european specialties',
     'continental delicacies',
+    'buy european food online',
+    'european gourmet shop',
+    'artisan european foods',
+    'traditional european recipes',
+    'european food delivery',
+    'authentic european ingredients',
+    'premium european delicacies',
+    'european food gift baskets',
   ],
   products: [
     'european food',
@@ -209,6 +207,10 @@ export const SEO_KEYWORDS = {
     'traditional food',
     'artisan made',
     'continental cuisine',
+    'handcrafted european',
+    'premium quality',
+    'authentic taste',
+    'traditional recipe',
   ],
   countries: [
     'traditional cuisine',
@@ -217,5 +219,133 @@ export const SEO_KEYWORDS = {
     'regional food',
     'cultural delicacies',
     'heritage food',
+    'traditional dishes',
+    'authentic ingredients',
+    'local producers',
+    'artisan foods',
   ],
 };
+
+// Generate ItemList structured data for product collections
+export function generateItemListStructuredData(items: Array<{
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl?: string;
+  rating?: number;
+}>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'Product',
+        name: item.name,
+        description: item.description,
+        image: item.imageUrl || defaultConfig.defaultImage,
+        offers: {
+          '@type': 'Offer',
+          price: item.price,
+          priceCurrency: 'EUR',
+        },
+        aggregateRating: item.rating ? {
+          '@type': 'AggregateRating',
+          ratingValue: item.rating,
+        } : undefined,
+      },
+    })),
+  };
+}
+
+// Generate FAQ structured data
+export function generateFAQStructuredData(faqs: Array<{ question: string; answer: string }>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(faq => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+}
+
+// Generate Review structured data
+export function generateReviewStructuredData(reviews: Array<{
+  author: string;
+  rating: number;
+  reviewBody: string;
+  datePublished: string;
+  productName?: string;
+}>) {
+  return reviews.map(review => ({
+    '@context': 'https://schema.org',
+    '@type': 'Review',
+    author: {
+      '@type': 'Person',
+      name: review.author,
+    },
+    reviewRating: {
+      '@type': 'Rating',
+      ratingValue: review.rating,
+      bestRating: 5,
+    },
+    reviewBody: review.reviewBody,
+    datePublished: review.datePublished,
+    itemReviewed: review.productName ? {
+      '@type': 'Product',
+      name: review.productName,
+    } : undefined,
+  }));
+}
+
+// Enhanced Organization structured data with more details
+export function generateEnhancedOrganizationStructuredData() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': `${defaultConfig.siteUrl}/#organization`,
+    name: 'EU Delicacies',
+    alternateName: 'European Delicacies Marketplace',
+    url: defaultConfig.siteUrl,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${defaultConfig.siteUrl}/logo.png`,
+      width: 250,
+      height: 60,
+    },
+    description: 'Authentic European delicacies and gourmet foods from local producers across 29+ European countries. Premium quality, artisan-made products delivered fresh.',
+    foundingDate: defaultConfig.foundingDate,
+    sameAs: [
+      'https://facebook.com/eudelicacies',
+      'https://instagram.com/eudelicacies',
+      'https://twitter.com/eudelicacies',
+      'https://linkedin.com/company/eudelicacies',
+    ],
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        contactType: 'Customer Service',
+        email: defaultConfig.contactEmail,
+        availableLanguage: ['English', 'German', 'French', 'Spanish', 'Italian'],
+        areaServed: 'EU',
+      },
+      {
+        '@type': 'ContactPoint',
+        contactType: 'Sales',
+        email: defaultConfig.contactEmail,
+        availableLanguage: ['English'],
+      },
+    ],
+    areaServed: {
+      '@type': 'GeoCircle',
+      name: 'European Union',
+    },
+  };
+}
