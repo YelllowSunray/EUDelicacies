@@ -87,7 +87,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     name: product.name,
     description: product.description,
     price: product.price,
-    imageUrl: product.imageUrl,
+    imageUrl: product.imageUrl || '/default-product-image.jpg',
     category: product.category,
     country: product.country,
     sellerId: product.sellerId,
@@ -152,7 +152,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             <div className="relative">
               <div className="aspect-square rounded-lg overflow-hidden bg-cream">
                 <Image
-                  src={product.imageUrl}
+                  src={product.imageUrl || '/default-product-image.jpg'}
                   alt={`${product.name} - Authentic ${product.country} delicacy`}
                   fill
                   className="object-cover"
