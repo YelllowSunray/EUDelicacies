@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: CountryPageProps): Promise<Me
       ],
       type: 'website',
       url: `/countries/${country.id}`,
-      image: country.flagUrl || '/default-country-image.jpg',
+      image: '/default-country-image.jpg', // Use default image since flag is emoji
     });
   } catch (error) {
     console.error('Error generating country metadata:', error);
@@ -93,7 +93,7 @@ export default async function CountryDetailPage({ params }: CountryPageProps) {
     name: country.name,
     description: `Authentic ${country.name} delicacies and traditional specialties`,
     url: `https://eudelicacies.com/countries/${country.id}`,
-    image: country.flagUrl,
+    image: '/default-country-image.jpg', // Use default since flag is emoji
     additionalProperty: country.specialties?.map(specialty => ({
       '@type': 'PropertyValue',
       name: 'Regional Specialty',
@@ -172,7 +172,7 @@ export default async function CountryDetailPage({ params }: CountryPageProps) {
         {/* Country Header */}
         <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           <div className="flex items-center gap-6 mb-6">
-            <div className="text-6xl">{country.flagEmoji}</div>
+            <div className="text-6xl">{country.flag}</div>
             <div>
               <h1 className="font-serif text-4xl font-bold text-navy mb-2">
                 {country.name}
