@@ -93,7 +93,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     sellerId: product.sellerId,
     sellerName: product.sellerName,
     rating: rating?.averageRating,
-    reviewCount: rating?.totalReviews,
+    reviewCount: rating?.reviewCount,
   });
 
   const breadcrumbStructuredData = generateBreadcrumbStructuredData([
@@ -169,7 +169,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               {/* Rating Badge */}
               {rating && rating.averageRating > 0 && (
                 <div className="absolute top-4 right-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-medium">
-                  ⭐ {rating.averageRating.toFixed(1)} ({rating.totalReviews})
+                  ⭐ {rating.averageRating.toFixed(1)} ({rating.reviewCount})
                 </div>
               )}
             </div>
