@@ -1,208 +1,258 @@
-"use client";
-
-import { use, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import Script from "next/script";
 import { getCountryById } from '@/lib/firebase-countries';
 import { getProductsByCountry } from '@/lib/products';
 import { FirebaseCountry } from '@/lib/firebase-collections';
 import { SellerProduct } from '@/lib/products';
 import ProductCard from "@/components/ProductCard";
-import Link from "next/link";
+import CountrySpecialtyFilter from "@/components/CountrySpecialtyFilter";
+import { generateMetadata as generateSEOMetadata, generateBreadcrumbStructuredData, SEO_KEYWORDS } from "@/lib/seo";
 
-export default function CountryDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const router = useRouter();
-  const resolvedParams = use(params);
-  const [country, setCountry] = useState<FirebaseCountry | null>(null);
-  const [products, setProducts] = useState<SellerProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
+interface CountryPageProps {
+  params: Promise<{ id: string }>;
+}
 
-  useEffect(() => {
-    loadData();
-  }, [resolvedParams.id]);
+// Generate metadata for SEO
+export async function generateMetadata({ params }: CountryPageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  
+  try {
+    const country = await getCountryById(resolvedParams.id);
+    
+    if (!country) {
+      return generateSEOMetadata({
+        title: "Country Not Found",
+        description: "The requested country could not be found.",
+        url: `/countries/${resolvedParams.id}`,
+      });
+    }
 
-  const loadData = async () => {
-    setLoading(true);
-    const [countryData, productsData] = await Promise.all([
+    const specialtiesText = country.specialties?.length > 0 
+      ? `Famous for ${country.specialties.slice(0, 3).join(', ')}.` 
+      : '';
+
+    return generateSEOMetadata({
+      title: `${country.name} Delicacies - Authentic ${country.name} Food & Specialties`,
+      description: `Discover authentic ${country.name} delicacies and traditional specialties. ${specialtiesText} Shop premium ${country.name} products from local producers with fast delivery across Europe.`,
+      keywords: [
+        ...SEO_KEYWORDS.countries,
+        `${country.name.toLowerCase()} food`,
+        `${country.name.toLowerCase()} delicacies`,
+        `authentic ${country.name.toLowerCase()} cuisine`,
+        `traditional ${country.name.toLowerCase()} products`,
+        `${country.name.toLowerCase()} specialties`,
+        `buy ${country.name.toLowerCase()} food online`,
+        ...(country.specialties?.map(s => s.toLowerCase()) || []),
+      ],
+      type: 'website',
+      url: `/countries/${country.id}`,
+      image: country.flagUrl || '/default-country-image.jpg',
+    });
+  } catch (error) {
+    console.error('Error generating country metadata:', error);
+    return generateSEOMetadata({
+      title: "Country Not Found",
+      description: "The requested country could not be found.",
+      url: `/countries/${resolvedParams.id}`,
+    });
+  }
+}
+
+export default async function CountryDetailPage({ params }: CountryPageProps) {
+  const resolvedParams = await params;
+  
+  let country: FirebaseCountry | null = null;
+  let products: SellerProduct[] = [];
+  
+  try {
+    [country, products] = await Promise.all([
       getCountryById(resolvedParams.id),
       getProductsByCountry(resolvedParams.id)
     ]);
     
-    setCountry(countryData);
-    setProducts(productsData);
-    setLoading(false);
-    
-    if (!countryData) {
-      router.push('/countries');
+    if (!country) {
+      notFound();
     }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <p className="text-navy text-xl">Loading...</p>
-      </div>
-    );
+  } catch (error) {
+    console.error('Error loading country data:', error);
+    notFound();
   }
 
-  if (!country) {
-    return null;
-  }
+  // Generate structured data
+  const breadcrumbStructuredData = generateBreadcrumbStructuredData([
+    { name: 'Home', url: '/' },
+    { name: 'Countries', url: '/countries' },
+    { name: country.name, url: `/countries/${country.id}` },
+  ]);
 
-  // Filter products based on selected specialty
-  const filteredProducts = selectedSpecialty
-    ? products.filter(product => {
-        const searchTerm = selectedSpecialty.toLowerCase();
-        return (
-          product.name.toLowerCase().includes(searchTerm) ||
-          product.description.toLowerCase().includes(searchTerm) ||
-          product.category.toLowerCase().includes(searchTerm)
-        );
-      })
-    : products;
-
-  const handleSpecialtyClick = (specialty: string) => {
-    if (selectedSpecialty === specialty) {
-      // Clicking the same specialty clears the filter
-      setSelectedSpecialty(null);
-    } else {
-      setSelectedSpecialty(specialty);
-    }
+  const countryStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Place',
+    name: country.name,
+    description: `Authentic ${country.name} delicacies and traditional specialties`,
+    url: `https://eudelicacies.com/countries/${country.id}`,
+    image: country.flagUrl,
+    additionalProperty: country.specialties?.map(specialty => ({
+      '@type': 'PropertyValue',
+      name: 'Regional Specialty',
+      value: specialty,
+    })) || [],
   };
 
-  const clearFilter = () => {
-    setSelectedSpecialty(null);
-  };
+  const productListStructuredData = products.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${country.name} Products`,
+    description: `Authentic products from ${country.name}`,
+    numberOfItems: products.length,
+    itemListElement: products.map((product, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'Product',
+        name: product.name,
+        description: product.description,
+        image: product.imageUrl,
+        offers: {
+          '@type': 'Offer',
+          price: product.price,
+          priceCurrency: 'EUR',
+        },
+      },
+    })),
+  } : null;
 
   return (
-    <div className="min-h-screen">
-      {/* Country Hero */}
-      <section className="bg-gradient-to-br from-olive/10 via-cream to-terracotta/10 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="text-8xl mb-6">{country.flag}</div>
-            <h1 className="font-serif text-5xl md:text-6xl font-bold text-navy mb-4">
-              {country.name}
-            </h1>
-            <p className="text-2xl text-terracotta italic mb-6">
-              {country.tagline}
-            </p>
-            <p className="text-lg text-navy/80 max-w-3xl mx-auto">
-              {country.description}
-            </p>
-          </div>
-        </div>
-      </section>
+    <div className="min-h-screen bg-cream">
+      {/* Structured Data */}
+      <Script
+        id="country-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(countryStructuredData),
+        }}
+      />
+      <Script
+        id="breadcrumb-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbStructuredData),
+        }}
+      />
+      {productListStructuredData && (
+        <Script
+          id="product-list-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(productListStructuredData),
+          }}
+        />
+      )}
 
-      {/* Specialties */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-olive/20">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="font-serif text-3xl font-bold text-navy flex items-center gap-2">
-              <span>🏆</span> Regional Specialties
-            </h2>
-            {selectedSpecialty && (
-              <button
-                onClick={clearFilter}
-                className="px-4 py-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors font-medium text-sm flex items-center gap-2"
-              >
-                <span>✕</span> Clear Filter
-              </button>
-            )}
+      {/* Breadcrumb Navigation */}
+      <div className="bg-white border-b border-olive/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <nav className="flex items-center space-x-2 text-sm">
+            <Link href="/" className="text-navy/60 hover:text-navy transition-colors">
+              Home
+            </Link>
+            <span className="text-navy/40">/</span>
+            <Link href="/countries" className="text-navy/60 hover:text-navy transition-colors">
+              Countries
+            </Link>
+            <span className="text-navy/40">/</span>
+            <span className="text-navy font-medium">{country.name}</span>
+          </nav>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Country Header */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <div className="flex items-center gap-6 mb-6">
+            <div className="text-6xl">{country.flagEmoji}</div>
+            <div>
+              <h1 className="font-serif text-4xl font-bold text-navy mb-2">
+                {country.name}
+              </h1>
+              <p className="text-lg text-navy/70">
+                Discover authentic delicacies from {country.name}
+              </p>
+            </div>
           </div>
           
-          {selectedSpecialty && (
-            <div className="mb-4 p-4 bg-terracotta/10 border border-terracotta/30 rounded-lg">
-              <p className="text-sm text-navy/80">
-                <strong>🔍 Filtering by:</strong> {selectedSpecialty}
+          {country.description && (
+            <div className="prose prose-navy max-w-none mb-6">
+              <p className="text-navy/80 leading-relaxed">
+                {country.description}
               </p>
             </div>
           )}
-          
-          <div className="flex flex-wrap gap-3">
-            {country.specialties.map((specialty, idx) => {
-              const isSelected = selectedSpecialty === specialty;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => handleSpecialtyClick(specialty)}
-                  className={`px-5 py-2.5 rounded-full font-semibold transition-all transform hover:scale-105 ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-terracotta to-terracotta/90 text-white shadow-lg ring-2 ring-terracotta/50'
-                      : 'bg-olive/10 text-olive hover:bg-olive/20 hover:shadow-md'
-                  }`}
-                >
-                  {isSelected && '✓ '}
-                  {specialty}
-                </button>
-              );
-            })}
-          </div>
-          
-          <p className="text-xs text-navy/60 mt-4">
-            💡 Click a specialty to filter products
-          </p>
-        </div>
-      </section>
 
-      {/* Products */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="font-serif text-4xl font-bold text-navy">
-            {selectedSpecialty 
-              ? `${selectedSpecialty} from ${country.name}` 
-              : `Products from ${country.name}`}
-          </h2>
-          {selectedSpecialty && filteredProducts.length > 0 && (
-            <div className="bg-terracotta/20 px-4 py-2 rounded-full">
-              <span className="text-terracotta font-semibold">
-                {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
-              </span>
+          {/* Regional Specialties */}
+          {country.specialties && country.specialties.length > 0 && (
+            <div>
+              <h2 className="font-serif text-2xl font-bold text-navy mb-4">
+                Regional Specialties
+              </h2>
+              <CountrySpecialtyFilter 
+                specialties={country.specialties}
+                products={products}
+              />
             </div>
           )}
         </div>
-        
-        {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        ) : selectedSpecialty ? (
-          <div className="text-center py-16 bg-gradient-to-br from-cream to-terracotta/10 rounded-lg border-2 border-dashed border-terracotta/30">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="font-serif text-2xl font-bold text-navy mb-2">
-              No "{selectedSpecialty}" Found
-            </h3>
-            <p className="text-navy/70 text-lg mb-6">
-              We couldn't find any products matching "{selectedSpecialty}" from {country.name}
-            </p>
-            <button
-              onClick={clearFilter}
-              className="px-6 py-3 bg-terracotta text-white rounded-full hover:bg-terracotta/90 transition-colors font-semibold shadow-md"
-            >
-              View All Products
-            </button>
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-cream rounded-lg">
-            <div className="text-6xl mb-4">{country.flag}</div>
-            <p className="text-navy/70 text-lg">
-              Products from {country.name} coming soon!
-            </p>
-          </div>
-        )}
-      </section>
 
-      {/* Back Link */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        <Link 
-          href="/countries"
-          className="inline-flex items-center text-olive hover:text-terracotta transition-colors font-medium"
-        >
-          ← Back to all countries
-        </Link>
-      </section>
+        {/* Products Section - This will be handled by the client component */}
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h2 className="font-serif text-3xl font-bold text-navy mb-2">
+                Products from {country.name}
+              </h2>
+              <p className="text-navy/70">
+                {products.length} authentic {products.length === 1 ? 'product' : 'products'} available
+              </p>
+            </div>
+          </div>
+
+          {products.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-cream rounded-lg">
+              <div className="text-6xl mb-4">📦</div>
+              <h3 className="text-xl font-semibold text-navy mb-2">
+                No products available yet
+              </h3>
+              <p className="text-navy/70 mb-6">
+                We're working on adding authentic {country.name} products to our marketplace.
+              </p>
+              <Link
+                href="/countries"
+                className="inline-block px-6 py-3 bg-olive text-white rounded-full hover:bg-olive/90 transition-colors font-semibold"
+              >
+                Explore Other Countries
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Back to Countries */}
+        <div className="mt-8 text-center">
+          <Link
+            href="/countries"
+            className="inline-flex items-center px-6 py-3 bg-navy text-white rounded-full hover:bg-navy/90 transition-colors font-semibold"
+          >
+            ← Explore All Countries
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

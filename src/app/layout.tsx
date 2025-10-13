@@ -9,6 +9,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Script from "next/script";
+import { generateMetadata as generateSEOMetadata, generateOrganizationStructuredData, generateWebsiteStructuredData, SEO_KEYWORDS } from "@/lib/seo";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -21,10 +22,13 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
+export const metadata: Metadata = generateSEOMetadata({
   title: "EU Delicacies - Taste the Heart of Europe",
-  description: "Discover authentic regional delicacies from across Europe. Wine, cheese, preserves, and more from artisan producers.",
-};
+  description: "Discover authentic European delicacies from local producers across 29 countries. Premium wines, artisan cheeses, traditional preserves, and gourmet specialties delivered fresh to your door.",
+  keywords: SEO_KEYWORDS.homepage,
+  type: 'website',
+  url: '/',
+});
 
 export default function RootLayout({
   children,
@@ -34,6 +38,23 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Structured Data */}
+        <Script
+          id="organization-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(generateOrganizationStructuredData()),
+          }}
+        />
+        <Script
+          id="website-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(generateWebsiteStructuredData()),
+          }}
+        />
+        
+        {/* Microsoft Clarity */}
         <Script
           id="clarity-script"
           strategy="afterInteractive"

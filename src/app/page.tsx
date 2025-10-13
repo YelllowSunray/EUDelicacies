@@ -1,6 +1,4 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import { Metadata } from "next";
 import HeroSection from "@/components/HeroSection";
 import CountryCard from "@/components/CountryCard";
 import ProductCard from "@/components/ProductCard";
@@ -8,35 +6,84 @@ import { getAllCountries } from "@/lib/firebase-countries";
 import { getAllProducts, type SellerProduct } from "@/lib/products";
 import { FirebaseCountry } from "@/lib/firebase-collections";
 import Link from "next/link";
+import Script from "next/script";
+import { generateMetadata as generateSEOMetadata, SEO_KEYWORDS } from "@/lib/seo";
 
-export default function Home() {
-  const [countries, setCountries] = useState<FirebaseCountry[]>([]);
-  const [recentProducts, setRecentProducts] = useState<SellerProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingProducts, setLoadingProducts] = useState(true);
+export const metadata: Metadata = generateSEOMetadata({
+  title: "EU Delicacies - Authentic European Food & Gourmet Specialties",
+  description: "Shop authentic European delicacies from 29+ countries. Discover artisan cheeses, premium wines, traditional preserves, and gourmet specialties from local European producers. Fast delivery across Europe.",
+  keywords: [
+    ...SEO_KEYWORDS.homepage,
+    'buy european food online',
+    'european gourmet marketplace',
+    'authentic european ingredients',
+    'european food delivery',
+    'artisan european products',
+    'traditional european recipes',
+  ],
+  type: 'website',
+  url: '/',
+});
 
-  useEffect(() => {
-    loadCountries();
-    loadRecentProducts();
-  }, []);
+// Server Component for better SEO
+async function getHomePageData() {
+  try {
+    const [countries, products] = await Promise.all([
+      getAllCountries(),
+      getAllProducts()
+    ]);
+    
+    return {
+      countries: countries.slice(0, 6), // Show only first 6 countries
+      recentProducts: products.slice(0, 8), // Show 8 recent products
+    };
+  } catch (error) {
+    console.error('Error loading homepage data:', error);
+    return {
+      countries: [],
+      recentProducts: [],
+    };
+  }
+}
 
-  const loadCountries = async () => {
-    setLoading(true);
-    const data = await getAllCountries();
-    // Show only first 6 countries on homepage
-    setCountries(data.slice(0, 6));
-    setLoading(false);
-  };
+export default async function Home() {
+  const { countries, recentProducts } = await getHomePageData();
 
-  const loadRecentProducts = async () => {
-    setLoadingProducts(true);
-    const products = await getAllProducts(8); // Get 8 most recent products
-    setRecentProducts(products);
-    setLoadingProducts(false);
+  // Generate structured data for the homepage
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'EU Delicacies - European Food Marketplace',
+    description: 'Discover authentic European delicacies from local producers across 29+ countries',
+    url: 'https://eudelicacies.com',
+    mainEntity: {
+      '@type': 'ItemList',
+      name: 'Featured European Countries',
+      numberOfItems: countries.length,
+      itemListElement: countries.map((country, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        item: {
+          '@type': 'Place',
+          name: country.name,
+          description: `Authentic ${country.name} delicacies and specialties`,
+          url: `https://eudelicacies.com/countries/${country.id}`,
+        },
+      })),
+    },
   };
 
   return (
     <div>
+      {/* Structured Data */}
+      <Script
+        id="homepage-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData),
+        }}
+      />
+      
       <HeroSection />
       
       {/* Recently Added Products Section */}
@@ -50,12 +97,7 @@ export default function Home() {
           </p>
         </div>
         
-        {loadingProducts ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">📦</div>
-            <p className="text-navy/70">Loading products...</p>
-          </div>
-        ) : recentProducts.length > 0 ? (
+        {recentProducts.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {recentProducts.map((product) => (
@@ -90,12 +132,7 @@ export default function Home() {
           </p>
         </div>
         
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🌍</div>
-            <p className="text-navy/70">Loading countries...</p>
-          </div>
-        ) : countries.length > 0 ? (
+        {countries.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {countries.map((country) => (

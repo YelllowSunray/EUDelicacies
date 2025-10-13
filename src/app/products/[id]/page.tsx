@@ -1,272 +1,243 @@
-"use client";
-
-import { use, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import Script from "next/script";
 import { getProductById } from "@/lib/products";
-import { useCart } from "@/contexts/CartContext";
-import { useAuth } from "@/contexts/AuthContext";
 import type { SellerProduct } from "@/lib/products";
 import ProductReviews from "@/components/ProductReviews";
+import AddToCartButton from "@/components/AddToCartButton";
+import { generateMetadata as generateSEOMetadata, generateProductStructuredData, generateBreadcrumbStructuredData, SEO_KEYWORDS } from "@/lib/seo";
+import { getProductRating } from "@/lib/reviews";
 
-export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const router = useRouter();
-  const { addToCart } = useCart();
-  const { user } = useAuth();
-  const [product, setProduct] = useState<SellerProduct | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
+interface ProductPageProps {
+  params: Promise<{ id: string }>;
+}
 
-  useEffect(() => {
-    loadProduct();
-  }, [resolvedParams.id]);
-
-  const loadProduct = async () => {
-    setLoading(true);
-    try {
-      const productData = await getProductById(resolvedParams.id);
-      if (!productData) {
-        router.push('/shop');
-        return;
-      }
-      setProduct(productData);
-    } catch (error) {
-      console.error('Error loading product:', error);
-      router.push('/shop');
-    }
-    setLoading(false);
-  };
-
-  const handleAddToCart = async () => {
-    if (!user) {
-      alert('Please login to add items to cart');
-      router.push('/login');
-      return;
-    }
-
-    if (!product) return;
-
-    if (product.stock <= 0) {
-      alert('This product is currently out of stock');
-      return;
-    }
-
-    setIsAdding(true);
-    try {
-      await addToCart({
-        productId: product.id!,
-        productName: product.name,
-        productImage: product.imageUrl,
-        price: product.price,
-        quantity: 1,
-        sellerId: product.sellerId,
-        sellerName: product.sellerName,
-        stock: product.stock,
+// Generate metadata for SEO
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  
+  try {
+    const product = await getProductById(resolvedParams.id);
+    
+    if (!product) {
+      return generateSEOMetadata({
+        title: "Product Not Found",
+        description: "The requested product could not be found.",
+        url: `/products/${resolvedParams.id}`,
       });
-      alert('✓ Added to cart!');
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      alert('Failed to add item to cart');
-    } finally {
-      setIsAdding(false);
     }
-  };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">📦</div>
-          <p className="text-navy text-xl">Loading product...</p>
-        </div>
-      </div>
-    );
+    const rating = await getProductRating(product.id);
+    
+    return generateSEOMetadata({
+      title: `${product.name} - Authentic ${product.country} Delicacy`,
+      description: `${product.description} Premium ${product.category.toLowerCase()} from ${product.country}. Order authentic European delicacies with fast delivery. €${product.price}`,
+      keywords: [
+        ...SEO_KEYWORDS.products,
+        product.name.toLowerCase(),
+        product.category.toLowerCase(),
+        product.country.toLowerCase(),
+        `${product.country.toLowerCase()} food`,
+        `authentic ${product.category.toLowerCase()}`,
+        `buy ${product.name.toLowerCase()}`,
+        `${product.country.toLowerCase()} delicacies`,
+      ],
+      type: 'product',
+      url: `/products/${product.id}`,
+      image: product.imageUrl,
+      price: product.price,
+      currency: 'EUR',
+      availability: 'in stock',
+      brand: product.country,
+      category: product.category,
+    });
+  } catch (error) {
+    console.error('Error generating product metadata:', error);
+    return generateSEOMetadata({
+      title: "Product Not Found",
+      description: "The requested product could not be found.",
+      url: `/products/${resolvedParams.id}`,
+    });
+  }
+}
+
+export default async function ProductDetailPage({ params }: ProductPageProps) {
+  const resolvedParams = await params;
+  
+  let product: SellerProduct | null = null;
+  let rating = null;
+  
+  try {
+    product = await getProductById(resolvedParams.id);
+    if (!product) {
+      notFound();
+    }
+    
+    rating = await getProductRating(product.id);
+  } catch (error) {
+    console.error('Error loading product:', error);
+    notFound();
   }
 
-  if (!product) {
-    return null;
-  }
+  // Generate structured data
+  const productStructuredData = generateProductStructuredData({
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    price: product.price,
+    imageUrl: product.imageUrl,
+    category: product.category,
+    country: product.country,
+    sellerId: product.sellerId,
+    sellerName: product.sellerName,
+    rating: rating?.averageRating,
+    reviewCount: rating?.totalReviews,
+  });
+
+  const breadcrumbStructuredData = generateBreadcrumbStructuredData([
+    { name: 'Home', url: '/' },
+    { name: 'Shop', url: '/shop' },
+    { name: product.category, url: `/shop?category=${encodeURIComponent(product.category)}` },
+    { name: product.name, url: `/products/${product.id}` },
+  ]);
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <Link 
-          href={`/countries/${product.countryId}`}
-          className="inline-flex items-center text-olive hover:text-terracotta transition-colors font-medium mb-8"
-        >
-          ← Back to {product.country}
-        </Link>
+    <div className="min-h-screen bg-cream">
+      {/* Structured Data */}
+      <Script
+        id="product-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productStructuredData),
+        }}
+      />
+      <Script
+        id="breadcrumb-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbStructuredData),
+        }}
+      />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Image */}
-          <div className="relative bg-gradient-to-br from-olive/10 to-terracotta/10 rounded-2xl overflow-hidden h-[500px]">
-            {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt={product.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-9xl">
-                  {product.category === "Cheese" && "🧀"}
-                  {product.category === "Beverages" && "🍷"}
-                  {product.category === "Oils" && "🫒"}
-                  {product.category === "Meats" && "🥓"}
-                  {product.category === "Bakery" && "🥖"}
-                  {product.category === "Snacks" && "🍪"}
-                  {product.category === "Gourmet Meals" && "🍽️"}
-                  {product.category === "Seafood" && "🐟"}
-                  {product.category === "Preserves" && "🍯"}
-                </div>
+      {/* Breadcrumb Navigation */}
+      <div className="bg-white border-b border-olive/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <nav className="flex items-center space-x-2 text-sm">
+            <Link href="/" className="text-navy/60 hover:text-navy transition-colors">
+              Home
+            </Link>
+            <span className="text-navy/40">/</span>
+            <Link href="/shop" className="text-navy/60 hover:text-navy transition-colors">
+              Shop
+            </Link>
+            <span className="text-navy/40">/</span>
+            <Link 
+              href={`/shop?category=${encodeURIComponent(product.category)}`}
+              className="text-navy/60 hover:text-navy transition-colors"
+            >
+              {product.category}
+            </Link>
+            <span className="text-navy/40">/</span>
+            <span className="text-navy font-medium">{product.name}</span>
+          </nav>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8">
+            {/* Product Image */}
+            <div className="relative">
+              <div className="aspect-square rounded-lg overflow-hidden bg-cream">
+                <Image
+                  src={product.imageUrl}
+                  alt={`${product.name} - Authentic ${product.country} delicacy`}
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
               </div>
-            )}
-          </div>
-
-          {/* Product Details */}
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="px-4 py-1 bg-olive/10 text-olive rounded-full text-sm font-medium">
-                {product.category}
-              </span>
-              <span className="text-navy/60">{product.region}</span>
-            </div>
-
-            <h1 className="font-serif text-4xl md:text-5xl font-bold text-navy mb-4">
-              {product.name}
-            </h1>
-
-            <div className="flex items-baseline gap-4 mb-6">
-              <span className="text-4xl font-bold text-terracotta">
-                €{product.price.toFixed(2)}
-              </span>
-              {product.rating && (
-                <span className="text-navy/60">
-                  ⭐ {product.rating}/5.0
-                </span>
+              
+              {/* Country Badge */}
+              <div className="absolute top-4 left-4 bg-navy text-white px-3 py-1 rounded-full text-sm font-medium">
+                🇪🇺 {product.country}
+              </div>
+              
+              {/* Rating Badge */}
+              {rating && rating.averageRating > 0 && (
+                <div className="absolute top-4 right-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-medium">
+                  ⭐ {rating.averageRating.toFixed(1)} ({rating.totalReviews})
+                </div>
               )}
             </div>
 
-            <p className="text-lg text-navy/80 mb-6">
-              {product.description}
-            </p>
-
-            {/* The Story */}
-            {product.story && (
-              <div className="bg-cream rounded-lg p-6 mb-6">
-                <h2 className="font-serif text-2xl font-bold text-navy mb-3">
-                  The Story
-                </h2>
-                <p className="text-navy/80 leading-relaxed">
-                  {product.story}
+            {/* Product Details */}
+            <div className="flex flex-col">
+              <div className="flex-1">
+                <h1 className="font-serif text-3xl font-bold text-navy mb-2">
+                  {product.name}
+                </h1>
+                
+                <p className="text-navy/60 mb-4">
+                  Authentic {product.category} from {product.country}
                 </p>
-                <p className="text-sm text-olive mt-4 italic">
-                  From: {product.sellerName}
-                </p>
-              </div>
-            )}
-
-            {/* Product Info */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-white rounded-lg p-4 border border-olive/20">
-                <p className="text-sm text-navy/60 mb-1">Shelf Life</p>
-                <p className="font-semibold text-navy">{product.shelfLife}</p>
-              </div>
-              <div className="bg-white rounded-lg p-4 border border-olive/20">
-                <p className="text-sm text-navy/60 mb-1">Stock Available</p>
-                <p className="font-semibold text-navy">{product.stock} units</p>
-              </div>
-            </div>
-
-            {/* Pair With */}
-            {product.pairWith && product.pairWith.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-navy mb-3">Perfect Pairings:</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.pairWith.map((item, idx) => (
-                    <span 
-                      key={idx}
-                      className="px-3 py-1 bg-white text-navy text-sm rounded-full border border-olive/30"
-                    >
-                      {item}
-                    </span>
-                  ))}
+                
+                <div className="text-3xl font-bold text-terracotta mb-6">
+                  €{product.price.toFixed(2)}
                 </div>
-              </div>
-            )}
-
-            {/* Tags */}
-            {product.tags && product.tags.length > 0 && (
-              <div className="mb-8">
-                <div className="flex flex-wrap gap-2">
-                  {product.tags.map((tag, idx) => (
-                    <span 
-                      key={idx}
-                      className="px-3 py-1 bg-gold/20 text-navy text-sm rounded-full font-medium"
-                    >
-                      ✓ {tag}
-                    </span>
-                  ))}
+                
+                <div className="prose prose-navy max-w-none mb-8">
+                  <h3 className="text-lg font-semibold text-navy mb-2">Description</h3>
+                  <p className="text-navy/80 leading-relaxed">
+                    {product.description}
+                  </p>
                 </div>
-              </div>
-            )}
 
-            {/* CTA Button */}
-            <button 
-              onClick={handleAddToCart}
-              disabled={isAdding || product.stock <= 0}
-              className="w-full py-4 bg-terracotta text-white rounded-full hover:bg-terracotta/90 transition-colors font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isAdding ? 'Adding...' : product.stock <= 0 ? 'Out of Stock' : `Add to Cart - €${product.price.toFixed(2)}`}
-            </button>
-
-            <p className="text-sm text-navy/60 text-center mt-4">
-              🚚 EU-wide shipping • 📦 Secure packaging • ✓ Satisfaction guaranteed
-            </p>
-          </div>
-        </div>
-
-        {/* Reviews Section */}
-        <div className="mt-16 pt-8 border-t-2 border-olive/20">
-          <div className="mb-8">
-            <h2 className="font-serif text-4xl font-bold text-navy mb-4 flex items-center gap-3">
-              <span>⭐</span> Customer Reviews
-            </h2>
-            {!user ? (
-              <div className="bg-gradient-to-br from-cream to-gold/10 border-2 border-gold/30 rounded-lg p-6 text-center mb-8">
-                <div className="text-5xl mb-3">🔒</div>
-                <p className="text-navy/70 mb-4 text-lg">
-                  Want to leave a review? Please log in first!
-                </p>
-                <Link
-                  href="/login"
-                  className="inline-block px-8 py-3 bg-terracotta text-white rounded-full hover:bg-terracotta/90 transition-colors font-semibold shadow-md"
-                >
-                  Sign In to Review
-                </Link>
-              </div>
-            ) : (
-              <div className="bg-gradient-to-r from-gold/20 to-terracotta/20 border-2 border-gold/40 rounded-lg p-6 mb-8">
-                <div className="flex items-start gap-3">
-                  <div className="text-3xl">🎁</div>
+                {/* Product Details */}
+                <div className="grid grid-cols-2 gap-4 mb-8 p-4 bg-cream rounded-lg">
                   <div>
-                    <h3 className="font-semibold text-navy mb-2 text-lg">Get 10% Off Your Next Order!</h3>
-                    <p className="text-sm text-navy/80">
-                      Purchase and receive this product, then leave a review from your <Link href="/orders" className="text-terracotta hover:underline font-semibold">Orders page</Link> to get an instant discount code!
-                    </p>
+                    <span className="text-sm font-medium text-navy/60">Category</span>
+                    <p className="text-navy font-medium">{product.category}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-navy/60">Origin</span>
+                    <p className="text-navy font-medium">{product.country}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-navy/60">Seller</span>
+                    <p className="text-navy font-medium">{product.sellerName || 'EU Delicacies Seller'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-navy/60">Availability</span>
+                    <p className="text-green-600 font-medium">✅ In Stock</p>
                   </div>
                 </div>
               </div>
-            )}
+
+              {/* Add to Cart Button */}
+              <AddToCartButton product={product} />
+            </div>
           </div>
-          <ProductReviews productId={product.id!} />
+        </div>
+
+        {/* Customer Reviews Section */}
+        <div className="mt-12">
+          <ProductReviews productId={product.id} />
+        </div>
+
+        {/* Related Products or Back to Shop */}
+        <div className="mt-12 text-center">
+          <Link
+            href="/shop"
+            className="inline-flex items-center px-6 py-3 bg-olive text-white rounded-full hover:bg-olive/90 transition-colors font-semibold"
+          >
+            ← Continue Shopping
+          </Link>
         </div>
       </div>
     </div>
   );
 }
-
