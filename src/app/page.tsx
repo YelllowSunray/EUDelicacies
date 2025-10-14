@@ -14,6 +14,7 @@ export const metadata: Metadata = generateSEOMetadata({
   description: "Shop authentic European delicacies from 29+ countries. Discover artisan cheeses, premium wines, traditional preserves, and gourmet specialties from local European producers. Fast delivery across Europe.",
   keywords: [
     ...SEO_KEYWORDS.homepage,
+    'Taste the Heart of Europe',
     'buy european food online',
     'european gourmet marketplace',
     'authentic european ingredients',

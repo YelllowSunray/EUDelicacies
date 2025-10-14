@@ -1,109 +1,77 @@
 import { MetadataRoute } from 'next';
-import { getAllCountries } from '@/lib/firebase-countries';
-import { getAllProducts } from '@/lib/products';
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://www.delicacies.eu';
+  const lastModified = new Date('2024-10-14');
   
-  try {
-    // Get dynamic data
-    const [countries, products] = await Promise.all([
-      getAllCountries(),
-      getAllProducts()
-    ]);
-
-    // Static pages
-    const staticPages: MetadataRoute.Sitemap = [
-      {
-        url: baseUrl,
-        lastModified: new Date(),
-        changeFrequency: 'daily',
-        priority: 1.0,
-      },
-      {
-        url: `${baseUrl}/shop`,
-        lastModified: new Date(),
-        changeFrequency: 'daily',
-        priority: 0.9,
-      },
-      {
-        url: `${baseUrl}/countries`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly',
-        priority: 0.8,
-      },
-      {
-        url: `${baseUrl}/faq`,
-        lastModified: new Date(),
-        changeFrequency: 'monthly',
-        priority: 0.7,
-      },
-      {
-        url: `${baseUrl}/about`,
-        lastModified: new Date(),
-        changeFrequency: 'monthly',
-        priority: 0.6,
-      },
-      {
-        url: `${baseUrl}/contact`,
-        lastModified: new Date(),
-        changeFrequency: 'monthly',
-        priority: 0.6,
-      },
-      {
-        url: `${baseUrl}/login`,
-        lastModified: new Date(),
-        changeFrequency: 'yearly',
-        priority: 0.3,
-      },
-      {
-        url: `${baseUrl}/signup`,
-        lastModified: new Date(),
-        changeFrequency: 'yearly',
-        priority: 0.3,
-      },
-    ];
-
-    // Country pages
-    const countryPages: MetadataRoute.Sitemap = countries.map((country) => ({
-      url: `${baseUrl}/countries/${country.id}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }));
-
-    // Product pages
-    const productPages: MetadataRoute.Sitemap = products.map((product) => ({
-      url: `${baseUrl}/products/${product.id}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
+  // Static pages - always available
+  const staticPages: MetadataRoute.Sitemap = [
+    {
+      url: baseUrl,
+      lastModified,
+      changeFrequency: 'daily',
+      priority: 1.0,
+    },
+    {
+      url: `${baseUrl}/shop`,
+      lastModified,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/countries`,
+      lastModified,
+      changeFrequency: 'weekly',
       priority: 0.8,
-    }));
+    },
+    {
+      url: `${baseUrl}/faq`,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/contact`,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/login`,
+      lastModified,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/signup`,
+      lastModified,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+  ];
 
-    return [...staticPages, ...countryPages, ...productPages];
-  } catch (error) {
-    console.error('Error generating sitemap:', error);
-    
-    // Return basic sitemap if dynamic data fails
-    return [
-      {
-        url: baseUrl,
-        lastModified: new Date(),
-        changeFrequency: 'daily',
-        priority: 1,
-      },
-      {
-        url: `${baseUrl}/shop`,
-        lastModified: new Date(),
-        changeFrequency: 'daily',
-        priority: 0.9,
-      },
-      {
-        url: `${baseUrl}/countries`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly',
-        priority: 0.8,
-      },
-    ];
-  }
+  // European countries - static list for reliable sitemap
+  const countries = [
+    'france', 'italy', 'spain', 'germany', 'netherlands', 'belgium', 
+    'portugal', 'greece', 'austria', 'switzerland', 'poland', 'czech-republic',
+    'hungary', 'croatia', 'denmark', 'sweden', 'norway', 'finland',
+    'ireland', 'romania', 'bulgaria', 'slovakia', 'slovenia', 'estonia',
+    'latvia', 'lithuania', 'luxembourg', 'malta', 'cyprus'
+  ];
+
+  // Country pages
+  const countryPages: MetadataRoute.Sitemap = countries.map((countryId) => ({
+    url: `${baseUrl}/countries/${countryId}`,
+    lastModified,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...countryPages];
 }
