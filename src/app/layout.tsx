@@ -32,9 +32,9 @@ export const metadata: Metadata = {
   }),
   // Additional meta tags for better SEO
   verification: {
-    google: 'your-google-verification-code', // Add your Google Search Console verification code
-    // yandex: 'your-yandex-verification-code',
-    // bing: 'your-bing-verification-code',
+    google: 'your-google-verification-code', // Replace with your actual Google Search Console verification code
+    yandex: 'your-yandex-verification-code', // Replace with your Yandex verification code
+    bing: 'your-bing-verification-code', // Replace with your Bing verification code
   },
   category: 'food',
   classification: 'E-commerce',

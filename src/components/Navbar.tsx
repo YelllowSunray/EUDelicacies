@@ -53,6 +53,12 @@ export default function Navbar() {
               Countries
             </Link>
             <Link 
+              href="/blog" 
+              className="text-navy hover:text-terracotta transition-colors font-medium"
+            >
+              Blog
+            </Link>
+            <Link 
               href="/about" 
               className="text-navy hover:text-terracotta transition-colors font-medium"
             >
@@ -205,6 +211,13 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Countries
+              </Link>
+              <Link 
+                href="/blog" 
+                className="text-navy hover:text-terracotta transition-colors font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Blog
               </Link>
               {userData?.role === "seller" && (
                 <Link 

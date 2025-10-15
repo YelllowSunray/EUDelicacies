@@ -21,6 +21,11 @@ const defaultConfig = {
   twitterHandle: '@eudelicacies',
   contactEmail: 'eudelicacies@gmail.com',
   foundingDate: '2024',
+  businessName: 'EU Delicacies Marketplace',
+  businessDescription: 'Premium European delicacies and gourmet foods from verified local producers across 29+ European countries.',
+  languages: ['en', 'de', 'fr', 'es', 'it'],
+  currency: 'EUR',
+  priceRange: '€€-€€€',
 };
 
 export function generateMetadata(config: SEOConfig): Metadata {
@@ -199,6 +204,21 @@ export const SEO_KEYWORDS = {
     'authentic european ingredients',
     'premium european delicacies',
     'european food gift baskets',
+    'european cheese online',
+    'italian pasta authentic',
+    'french wine delivery',
+    'german sausages online',
+    'spanish olive oil premium',
+    'swiss chocolate artisan',
+    'greek honey organic',
+    'dutch cheese aged',
+    'belgian chocolate luxury',
+    'portuguese wine vintage',
+    'european food subscription',
+    'gourmet food europe',
+    'european delicatessen online',
+    'continental food delivery',
+    'european artisan products',
   ],
   products: [
     'european food',
@@ -309,7 +329,7 @@ export function generateReviewStructuredData(reviews: Array<{
 export function generateEnhancedOrganizationStructuredData() {
   return {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': ['Organization', 'OnlineStore'],
     '@id': `${defaultConfig.siteUrl}/#organization`,
     name: 'EU Delicacies',
     alternateName: 'European Delicacies Marketplace',
@@ -320,8 +340,18 @@ export function generateEnhancedOrganizationStructuredData() {
       width: 250,
       height: 60,
     },
-    description: 'Authentic European delicacies and gourmet foods from local producers across 29+ European countries. Premium quality, artisan-made products delivered fresh.',
+    image: {
+      '@type': 'ImageObject',
+      url: `${defaultConfig.siteUrl}/og-image.jpg`,
+      width: 1200,
+      height: 630,
+    },
+    description: defaultConfig.businessDescription,
     foundingDate: defaultConfig.foundingDate,
+    slogan: 'Taste the Heart of Europe',
+    priceRange: defaultConfig.priceRange,
+    currenciesAccepted: [defaultConfig.currency],
+    paymentAccepted: ['Credit Card', 'PayPal', 'Bank Transfer'],
     sameAs: [
       'https://facebook.com/eudelicacies',
       'https://instagram.com/eudelicacies',
@@ -333,8 +363,14 @@ export function generateEnhancedOrganizationStructuredData() {
         '@type': 'ContactPoint',
         contactType: 'Customer Service',
         email: defaultConfig.contactEmail,
-        availableLanguage: ['English', 'German', 'French', 'Spanish', 'Italian'],
+        availableLanguage: defaultConfig.languages,
         areaServed: 'EU',
+        hoursAvailable: {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+          opens: '09:00',
+          closes: '17:00',
+        },
       },
       {
         '@type': 'ContactPoint',
@@ -343,9 +379,110 @@ export function generateEnhancedOrganizationStructuredData() {
         availableLanguage: ['English'],
       },
     ],
+    areaServed: [
+      {
+        '@type': 'Country',
+        name: 'European Union',
+      },
+    ],
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'European Delicacies Catalog',
+      itemListElement: [
+        {
+          '@type': 'OfferCatalog',
+          name: 'Artisan Cheeses',
+          itemListElement: [
+            {
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Product',
+                name: 'European Artisan Cheeses',
+                category: 'Cheese',
+              },
+            },
+          ],
+        },
+        {
+          '@type': 'OfferCatalog',
+          name: 'Premium Wines',
+          itemListElement: [
+            {
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Product',
+                name: 'European Premium Wines',
+                category: 'Beverages',
+              },
+            },
+          ],
+        },
+        {
+          '@type': 'OfferCatalog',
+          name: 'Gourmet Preserves',
+          itemListElement: [
+            {
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Product',
+                name: 'Traditional European Preserves',
+                category: 'Preserves',
+              },
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
+
+// Generate LocalBusiness structured data for better local SEO
+export function generateLocalBusinessStructuredData() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': `${defaultConfig.siteUrl}/#localbusiness`,
+    name: defaultConfig.businessName,
+    description: defaultConfig.businessDescription,
+    url: defaultConfig.siteUrl,
+    telephone: '+49-XXX-XXXXXXX', // Replace with actual phone number
+    email: defaultConfig.contactEmail,
+    priceRange: defaultConfig.priceRange,
+    currenciesAccepted: [defaultConfig.currency],
+    paymentAccepted: ['Credit Card', 'PayPal', 'Bank Transfer'],
     areaServed: {
       '@type': 'GeoCircle',
       name: 'European Union',
     },
+    serviceArea: {
+      '@type': 'GeoCircle',
+      name: 'European Union',
+    },
+  };
+}
+
+// Generate WebApplication structured data
+export function generateWebApplicationStructuredData() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'EU Delicacies',
+    url: defaultConfig.siteUrl,
+    description: 'Shop authentic European delicacies online',
+    applicationCategory: 'E-commerce',
+    operatingSystem: 'Web Browser',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'EUR',
+    },
+    featureList: [
+      'Browse European delicacies',
+      'Secure online shopping',
+      'EU-wide delivery',
+      'Product reviews and ratings',
+      'Seller verification',
+    ],
   };
 }
