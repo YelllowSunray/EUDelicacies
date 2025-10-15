@@ -34,7 +34,6 @@ export const metadata: Metadata = {
   verification: {
     google: 'your-google-verification-code', // Replace with your actual Google Search Console verification code
     yandex: 'your-yandex-verification-code', // Replace with your Yandex verification code
-    bing: 'your-bing-verification-code', // Replace with your Bing verification code
   },
   category: 'food',
   classification: 'E-commerce',
@@ -43,6 +42,7 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black-translucent',
     'apple-mobile-web-app-title': 'EU Delicacies',
+    'msvalidate.01': 'your-bing-verification-code', // Replace with your Bing verification code
   },
 };
 
